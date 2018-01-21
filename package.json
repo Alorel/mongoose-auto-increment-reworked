@@ -1,0 +1,21 @@
+{
+  "name": "mongoose-auto-increment5",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "dependencies": {
+    "@types/mongoose": "*"
+  },
+  "peerDependencies": {
+    "mongoose": "^4.0.0 || ^5.0.0"
+  },
+  "devDependencies": {
+    "mongoose": "^4.0.0 || ^5.0.0"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}
