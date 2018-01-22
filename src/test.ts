@@ -62,9 +62,7 @@ describe('Core', () => {
     }
   }
 
-  before('Connect', function() {
-    this.timeout(10000);
-
+  before('Connect', () => {
     const connectionOptions: any = {};
 
     if ((mongoose.version || '').charAt(0) === '4') {
