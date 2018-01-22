@@ -7,13 +7,7 @@ import * as mongoose from 'mongoose';
 import {Document, Model} from 'mongoose';
 import * as util from 'util';
 import {v4} from 'uuid';
-import {
-  IdCounterDocument,
-  IdCounterModel,
-  MongooseAutoIncrementID,
-  NextCountFunction,
-  ResetCountFunction
-} from './index';
+import {IdCounterDocument, MongooseAutoIncrementID, NextCountFunction, ResetCountFunction} from './index';
 
 function inspect(value: any, opts: util.InspectOptions = {}): string {
   return util.inspect(value, Object.assign({colors: true}, opts));
@@ -41,7 +35,7 @@ describe('Core', () => {
   // let Foo: Model<FooDocument> & HasFunctions;
   // let sch: Schema;
 
-  const modelMap = new Map<string, Model<IdCounterModel>>();
+  const modelMap = new Map<string | undefined, Model<IdCounterDocument>>();
 
   function getModel(): Model<IdCounterDocument> {
     return MongooseAutoIncrementID['idCounter'];
@@ -55,12 +49,12 @@ describe('Core', () => {
   }
 
   function deinitialise() {
-    MongooseAutoIncrementID['idCounter'] = null;
+    MongooseAutoIncrementID['idCounter'] = <any>null;
   }
 
   function initialise(modelName?: string) {
     if (modelMap.has(modelName)) {
-      MongooseAutoIncrementID['idCounter'] = modelMap.get(modelName);
+      MongooseAutoIncrementID['idCounter'] = <Model<IdCounterDocument>>modelMap.get(modelName);
     } else {
       deinitialise();
       MongooseAutoIncrementID.initialise(modelName);

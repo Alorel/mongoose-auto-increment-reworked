@@ -3,16 +3,20 @@ sudo: false
 language: node_js
 
 stages:
-  - &testStage Test & Lint
+  - &lintStage Lint
+  - &testStage Test
 
-test_stage_base: &testStageBase
-  stage: *testStage
-  services:
-    - mongodb
+cached_stage: &cachedStage
   cache: &cache
     directories:
       - node_modules
   before_cache: rm -rf ./node_modules/.cache
+
+test_stage_base: &testStageBase
+  <<: *cachedStage
+  stage: *testStage
+  services:
+    - mongodb
   before_install: node ./build/set-mongoose-version.js
   script:
     - npm test
@@ -25,17 +29,13 @@ test_stage_base: &testStageBase
 
 jobs:
   include:
+    - stage: *lintStage
+      <<: *cachedStage
+      script: npm run tslint
     - <<: *testStageBase
       node_js: &latest_tested 9
       env:
         - MONGOOSE=5
-      script:
-        - npm test
-        - npm run test:entry
-        - mv ./node_modules/tslib ./node_modules/tslib.bak
-        - npm run test:entry
-        - mv ./node_modules/tslib.bak ./node_modules/tslib
-        - npm run tslint
     - <<: *testStageBase
       node_js: 9
       env:
