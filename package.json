@@ -29,7 +29,7 @@
     "@types/chai": "^4.1.1",
     "@types/lodash": "^4.14.93",
     "@types/mocha": "^2.2.46",
-    "@types/node": "^9.3.0",
+    "@types/node": "^6.0.0",
     "@types/uuid": "^3.4.3",
     "chai": "^4.1.2",
     "concurrently": "^3.5.1",
