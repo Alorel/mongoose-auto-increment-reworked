@@ -7,7 +7,13 @@ import * as mongoose from 'mongoose';
 import {Document, Model} from 'mongoose';
 import * as util from 'util';
 import {v4} from 'uuid';
-import {IdCounterDocument, MongooseAutoIncrementID, NextCountFunction, ResetCountFunction} from './index';
+import {
+  IdCounterDocument,
+  IdCounterModel,
+  MongooseAutoIncrementID,
+  NextCountFunction,
+  ResetCountFunction
+} from './index';
 
 function inspect(value: any, opts: util.InspectOptions = {}): string {
   return util.inspect(value, Object.assign({colors: true}, opts));
@@ -35,8 +41,10 @@ describe('Core', () => {
   // let Foo: Model<FooDocument> & HasFunctions;
   // let sch: Schema;
 
+  const modelMap = new Map<string, Model<IdCounterModel>>();
+
   function getModel(): Model<IdCounterDocument> {
-    return mongoose.model('IdCounter');
+    return MongooseAutoIncrementID['idCounter'];
   }
 
   function cleanIdCount(): Promise<void> {
@@ -44,6 +52,20 @@ describe('Core', () => {
       .lean()
       .then(() => {
       });
+  }
+
+  function deinitialise() {
+    MongooseAutoIncrementID['idCounter'] = null;
+  }
+
+  function initialise(modelName?: string) {
+    if (modelMap.has(modelName)) {
+      MongooseAutoIncrementID['idCounter'] = modelMap.get(modelName);
+    } else {
+      deinitialise();
+      MongooseAutoIncrementID.initialise(modelName);
+      modelMap.set(modelName, MongooseAutoIncrementID['idCounter']);
+    }
   }
 
   before('Connect', function() {
@@ -58,10 +80,70 @@ describe('Core', () => {
     return mongoose.connect('mongodb://127.0.0.1/auto-id-tests', connectionOptions);
   });
 
-  before('Initialise', () => MongooseAutoIncrementID.initialise());
+  before('Initialise', () => initialise());
 
   before('Remove id counters', () => cleanIdCount());
   after('Clean ID count', () => cleanIdCount());
+
+  describe('Constructor', () => {
+    it('Should throw if schema is missing', () => {
+      expect(() => new MongooseAutoIncrementID(<any>null, 'x'))
+        .to.throw(TypeError, 'Schema is required and must be an instance of Mongoose Schema');
+    });
+    it('Should throw if schema is not an instance of Schema', () => {
+      expect(() => new MongooseAutoIncrementID(<any>true, 'x'))
+        .to.throw(TypeError, 'Schema is required and must be an instance of Mongoose Schema');
+    });
+    it('Should throw if modelName is absent', () => {
+      expect(() => new MongooseAutoIncrementID(new mongoose.Schema(), ''))
+        .to.throw(TypeError, 'Model name must be a string');
+    });
+    it('Should throw if modelName is not a string', () => {
+      expect(() => new MongooseAutoIncrementID(new mongoose.Schema(), <any>true))
+        .to.throw(TypeError, 'Model name must be a string');
+    });
+    it('Should succeed if all is ok', () => {
+      expect(() => new MongooseAutoIncrementID(new mongoose.Schema(), 'foo'))
+        .not.to.throw();
+    });
+  });
+
+  describe('initialise', () => {
+    after('re-initialise', () => initialise());
+
+    it('Should throw if already initialised', () => {
+      deinitialise();
+      expect(() => {
+        MongooseAutoIncrementID.initialise();
+        MongooseAutoIncrementID.initialise();
+      })
+        .to.throw(Error, 'Already initialised');
+    });
+
+    describe('Should throw if model name is', () => {
+      beforeEach(() => deinitialise());
+
+      it('Absent', () => {
+        expect(() => MongooseAutoIncrementID.initialise(<any>null))
+          .to.throw(TypeError, 'Model name is required');
+      });
+      it('Not a string', () => {
+        expect(() => MongooseAutoIncrementID.initialise(<any>5))
+          .to.throw(TypeError, 'Model name is required');
+      });
+    });
+
+    it('Model name should default to IdCounter', () => {
+      initialise();
+      expect(getModel().modelName).to.eq('IdCounter');
+    });
+
+    it('Model name should be settable', () => {
+      const id: string = v4();
+      initialise(id);
+      expect(getModel().modelName).to.eq(id);
+    });
+  });
 
   describe('Counter schema settings', () => {
     after(() => cleanIdCount());

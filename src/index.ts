@@ -50,9 +50,6 @@ log('Defining index');
 
 idCounterSchema.index({f: 1, m: 1}, {unique: true});
 
-// tslint:disable-next-line:variable-name
-let IdCounter: Model<IdCounterDocument>;
-
 export type NextCountFunction = () => Promise<number>;
 export type ResetCountFunction = NextCountFunction;
 
@@ -66,7 +63,7 @@ export interface PluginOptions {
 }
 
 export class MongooseAutoIncrementID {
-  private static initialised = false;
+  private static idCounter: Model<IdCounterDocument>;
   private readonly _options: Partial<PluginOptions>;
   private readonly model: string;
   private ready = false;
@@ -134,7 +131,7 @@ export class MongooseAutoIncrementID {
 
   public static initialise(modelName = 'IdCounter'): void {
     log('Performing static initialisation with name %s', modelName);
-    if (MongooseAutoIncrementID.initialised) {
+    if (MongooseAutoIncrementID.idCounter) {
       throw new Error('Already initialised');
     }
     if (!modelName || typeof modelName !== 'string') {
@@ -142,14 +139,13 @@ export class MongooseAutoIncrementID {
     }
 
     log('Creating model instance');
-    IdCounter = model<IdCounterDocument>(modelName, idCounterSchema);
-    MongooseAutoIncrementID.initialised = true;
+    MongooseAutoIncrementID.idCounter = model<IdCounterDocument>(modelName, idCounterSchema);
   }
 
   public applyPlugin(): Promise<void> {
     log('Running plugin initialisation on %s', this.model);
 
-    if (!MongooseAutoIncrementID.initialised) {
+    if (!MongooseAutoIncrementID.idCounter) {
       return Promise.reject(new Error('The initialise method has not been called'));
     }
 
@@ -291,7 +287,7 @@ export class MongooseAutoIncrementID {
   private init(): Promise<void> {
     log('Performing plugin initialisation');
 
-    return IdCounter.findOne(this.findArgs, {_id: 1})
+    return MongooseAutoIncrementID.idCounter.findOne(this.findArgs, {_id: 1})
       .lean()
       .then((doc: any): void | Promise<void> => {
         if (!doc) {
@@ -302,7 +298,7 @@ export class MongooseAutoIncrementID {
           };
           log('No counter document found for %s; creating with %s', this.model, JSON.stringify(payload));
 
-          return IdCounter.create(payload)
+          return MongooseAutoIncrementID.idCounter.create(payload)
             .then(() => {
               log('Counter document for %s created', this.model);
               this.ready = true;
@@ -314,14 +310,14 @@ export class MongooseAutoIncrementID {
   }
 
   private nextCountFn(): Promise<number> {
-    return (<Promise<IdCounterModel>>IdCounter.findOne(this.findArgs, {c: 1}).lean().exec())
+    return (<Promise<IdCounterModel>>MongooseAutoIncrementID.idCounter.findOne(this.findArgs, {c: 1}).lean().exec())
       .then((doc: IdCounterModel): number => {
         return doc === null ? this.options.startAt : doc.c + this.options.incrementBy;
       });
   }
 
   private onSaveAnyField(): Promise<number> {
-    return (<Promise<IdCounterModel>>IdCounter
+    return (<Promise<IdCounterModel>>MongooseAutoIncrementID.idCounter
       .findOneAndUpdate(
         this.findArgs,
         {$inc: {c: this.options.incrementBy}},
@@ -333,7 +329,7 @@ export class MongooseAutoIncrementID {
   }
 
   private onSaveNumberField(value: number): Promise<any> {
-    return IdCounter
+    return MongooseAutoIncrementID.idCounter
       .findOneAndUpdate(
         {f: this.options.field, m: this.model, c: {$lt: value}},
         {c: value},
@@ -344,7 +340,7 @@ export class MongooseAutoIncrementID {
   }
 
   private resetCountFn(): Promise<number> {
-    return IdCounter
+    return MongooseAutoIncrementID.idCounter
       .findOneAndUpdate(
         this.findArgs,
         {c: this.initialStart},
