@@ -32,9 +32,6 @@ interface HasFunctions {
 }
 
 describe('Core', () => {
-  // let Foo: Model<FooDocument> & HasFunctions;
-  // let sch: Schema;
-
   const modelMap = new Map<string | undefined, Model<IdCounterDocument>>();
 
   function getModel(): Model<IdCounterDocument> {
@@ -175,7 +172,101 @@ describe('Core', () => {
     });
   });
 
+  describe('findArgs', () => {
+    let name: string;
+    let plugin: MongooseAutoIncrementID;
+
+    before('init', () => {
+      const sch = new Schema({foo: {type: String}});
+      name = v4();
+      plugin = new MongooseAutoIncrementID(sch, name, {field: 'bar'});
+    });
+
+    it('Should have a valid value', () => {
+      expect(plugin['findArgs']).to.deep.eq({m: name, f: 'bar'});
+    });
+
+    it('Should be frozen', () => {
+      expect(plugin['findArgs']).to.be.frozen;
+    });
+  });
+
+  describe('initialStart', () => {
+    let name: string;
+    let plugin: MongooseAutoIncrementID;
+
+    before('init', () => {
+      const sch = new Schema({foo: {type: String}});
+      name = v4();
+      plugin = new MongooseAutoIncrementID(sch, name, {startAt: 5, incrementBy: 2});
+    });
+
+    it('Should eq 3', () => {
+      expect(plugin['initialStart']).to.eq(3);
+    });
+  });
+
+  describe('validateOptions should throw if', () => {
+    let sch: mongoose.Schema;
+    let opts: any;
+
+    beforeEach(() => {
+      sch = new Schema({foo: {type: String}});
+      opts = {};
+    });
+
+    it('field is not a string', () => {
+      opts.field = 5;
+      expect(() => new MongooseAutoIncrementID(sch, v4(), opts).validateOptions())
+        .to
+        .throw(TypeError, 'field must be a string');
+    });
+
+    it('incrementBy is not a nuber', () => {
+      opts.incrementBy = 'foo';
+      expect(() => new MongooseAutoIncrementID(sch, v4(), opts).validateOptions())
+        .to
+        .throw(TypeError, 'incrementBy must be a number');
+    });
+
+    it('startAt is not a nuber', () => {
+      opts.startAt = 'foo';
+      expect(() => new MongooseAutoIncrementID(sch, v4(), opts).validateOptions())
+        .to
+        .throw(TypeError, 'startAt must be a number');
+    });
+
+    it('nextCount is not a string and not false', () => {
+      opts.nextCount = 5;
+      expect(() => new MongooseAutoIncrementID(sch, v4(), opts).validateOptions())
+        .to
+        .throw(TypeError, 'nextCount must be a string or false');
+    });
+
+    it('resetCount is not a string and not false', () => {
+      opts.resetCount = 5;
+      expect(() => new MongooseAutoIncrementID(sch, v4(), opts).validateOptions())
+        .to
+        .throw(TypeError, 'resetCount must be a string or false');
+    });
+  });
+
   describe('nextCount', () => {
+    let mod: Model<any> & HasFunctions;
+
+    before(() => initialise(v4()));
+
+    before(() => {
+      const sch = new Schema({foo: {type: String}});
+      const name: string = v4();
+      const p$ = new MongooseAutoIncrementID(sch, name).applyPlugin();
+      mod = <any>mongoose.model(name, sch);
+
+      return p$;
+    });
+
+    after(() => initialise());
+
     describe('Should be called _nextCount by default', () => {
       const name: string = v4();
       const sch = new Schema({foo: {type: Number, required: true}});
@@ -248,9 +339,56 @@ describe('Core', () => {
         });
       });
     });
+
+    it('Should return 1 for the first doc', async() => {
+      expect(await mod._nextCount()).to.eq(1);
+    });
+
+    it('Should return 2 for the second doc', async() => {
+      await mod.create({foo: v4()});
+      expect(await mod._nextCount()).to.eq(2);
+    });
+
+    it('Should return 1 if counter doc is removed', async() => {
+      await cleanIdCount();
+      expect(await mod._nextCount()).to.eq(1);
+    });
   });
 
   describe('resetCount', () => {
+    let mod: Model<any> & HasFunctions;
+
+    before('initialise', () => initialise(v4()));
+
+    before('plugin', () => {
+      const sch = new Schema({foo: {type: String}});
+      const name: string = v4();
+      const p$ = new MongooseAutoIncrementID(sch, name).applyPlugin();
+      mod = <any>mongoose.model(name, sch);
+
+      return p$;
+    });
+
+    before('create docs', () => {
+      return Promise.all([
+        mod.create({foo: 'bar'}),
+        mod.create({bar: 'foo'}),
+        mod.create({quz: 'baz'}),
+        mod.create({baz: 'qux'})
+      ]);
+    });
+
+    after(() => initialise());
+
+    it('nextCount should not return 1 initially', async() => {
+      expect(await mod._nextCount()).to.not.eq(1);
+    });
+
+    it('nextCount should return 1 after resetting', async() => {
+      await mod._resetCount();
+      expect(await mod._nextCount()).to.eq(1);
+    });
+
     describe('Should be called _resetCount by default', () => {
       const name: string = v4();
       const sch = new Schema({foo: {type: Number, required: true}});
@@ -325,37 +463,139 @@ describe('Core', () => {
     });
   });
 
-  // before('Init Schema', () => {
-  //   sch = new Schema({
-  //                      foo: {
-  //                        type: Number
-  //                      }
-  //                    });
-  // });
-  //
-  // before('Init plugin', () => {
-  //   const ai = new MongooseAutoIncrementID(sch, 'Foo', {
-  //     nextCount: 'nextID',
-  //     resetCount: 'resetID'
-  //   });
-  //
-  //   return ai.applyPlugin();
-  // });
-  //
-  // before('Init model', () => {
-  //   Foo = <Model<FooDocument> & HasFunctions>mongoose.model<FooDocument>('Foo', sch);
-  // });
+  describe('init', () => {
+    before('clear', () => cleanIdCount());
 
-  // it('Model should have a nextID function', () => {
-  //   expect(typeof Foo.nextID).to.eq('function');
-  // });
-  // it('Model should have a resetID function', () => {
-  //   expect(typeof Foo.resetID).to.eq('function');
-  // });
-  // it('Instance should have a nextID function', () => {
-  //   expect(typeof new Foo().nextID).to.eq('function');
-  // });
-  // it('Instance should have a resetID function', () => {
-  //   expect(typeof new Foo().resetID).to.eq('function');
-  // });
+    it('Should still resolve the promise and flag itself as ready when the counter doc exists', async() => {
+      const name: string = v4();
+      const sch = new Schema({foo: {type: Number}});
+
+      await getModel().create({f: '_id', m: name, c: 1});
+      await new MongooseAutoIncrementID(sch, name).applyPlugin();
+    });
+  });
+
+  describe('applyPlugin', () => {
+    describe('should throw if not initialised', () => {
+      before(() => deinitialise());
+      after(() => initialise());
+
+      it('test', done => {
+        const sch = new Schema();
+        const plugin = new MongooseAutoIncrementID(sch, v4());
+
+        plugin.applyPlugin()
+          .then(() => done('Did not throw'))
+          .catch((e: any) => {
+            expect(e.message).to.eq('The initialise method has not been called');
+            expect(plugin['rejected']).to.be.false;
+            done();
+          })
+          .catch(done);
+      });
+    });
+
+    it('Should reject if an error is thrown', done => {
+      const sch = new Schema();
+      const plugin = new MongooseAutoIncrementID(sch, v4(), <any>{field: 5});
+
+      plugin.applyPlugin()
+        .then(() => done('Did not throw'))
+        .catch(() => {
+          expect(plugin['rejected']).to.be.true;
+          done();
+        })
+        .catch(done);
+    });
+
+    it('Should set rejected to true if init rejects', done => {
+      const sch = new Schema();
+      const plugin = new MongooseAutoIncrementID(sch, v4());
+      plugin['init'] = () => Promise.reject(new Error('I am a reject'));
+
+      plugin.applyPlugin()
+        .then(() => done('no rejection'))
+        .catch((e: any) => {
+          expect(e.message).to.eq('I am a reject');
+          expect(plugin['rejected']).to.be.true;
+          done();
+        })
+        .catch(done);
+    });
+  });
+
+  describe('addFieldToSchema', () => {
+    it('Should add a unique index if field is not _id', async() => {
+      const sch = new Schema({foo: {type: Number}});
+      const name: string = v4();
+      const plugin = new MongooseAutoIncrementID(sch, name, {field: 'bar'});
+      await plugin.applyPlugin();
+      const model = mongoose.model<any>(name, sch);
+
+      await model.create({foo: 1});
+
+      const indices: any = await model.collection.getIndexes();
+      expect(indices.bar_1).to.deep.eq([['bar', 1]]);
+    });
+  });
+
+  it('Save hook should trigger even if doc is not new', async() => {
+    const sch = new Schema({foo: {type: String}});
+    const name: string = v4();
+    const p = new MongooseAutoIncrementID(sch, name);
+    await p.applyPlugin();
+
+    const m: Model<any> = mongoose.model(name, sch);
+
+    const d: any = await m.create({foo: 'bar'});
+    expect(d._id).to.eq(1);
+    d.foo = 'qux';
+    await d.save();
+    expect(d._id).to.eq(1);
+  });
+
+  it('Save hook should fail if plugin got rejected', done => {
+    const sch = new Schema({foo: {type: Number}});
+    const name: string = v4();
+    const p = new MongooseAutoIncrementID(sch, name);
+    p.applyPlugin()
+      .then(() => {
+        const mod: Model<any> = mongoose.model<any>(name, sch);
+        p['ready'] = false;
+        p['rejected'] = true;
+
+        mod.create({foo: 1})
+          .then(() => done('Did not reject'))
+          .catch((e: any) => {
+            expect(e.message).to.eq('The initialisation promise rejected');
+            done();
+          })
+          .catch(done);
+      })
+      .catch(done);
+  });
+
+  describe('Save hook with numeric field', () => {
+    let mod: Model<any> & HasFunctions;
+
+    before(async() => {
+      const name: string = v4();
+      const sch = new Schema({foo: {type: String}});
+      const p = new MongooseAutoIncrementID(sch, name);
+      await p.applyPlugin();
+      mod = <any>mongoose.model(name, sch);
+
+      await mod.create({foo: v4()});
+    });
+
+    it('Should set counter to 5 if value > currently stored', async() => {
+      await new mod({_id: 5, foo: v4()}).save();
+      expect(await mod._nextCount()).to.eq(6);
+    });
+
+    it('Should not update value if value < currently stored', async() => {
+      await new mod({_id: 2, foo: v4()}).save();
+      expect(await mod._nextCount()).to.eq(6);
+    });
+  });
 });

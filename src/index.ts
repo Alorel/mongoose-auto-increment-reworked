@@ -333,7 +333,7 @@ export class MongooseAutoIncrementID {
       .findOneAndUpdate(
         {f: this.options.field, m: this.model, c: {$lt: value}},
         {c: value},
-        {new: true, fields: {c: 1}}
+        {new: true, fields: {_id: 1}}
       )
       .lean()
       .exec();
