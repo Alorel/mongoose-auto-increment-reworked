@@ -4,7 +4,7 @@ describe('Entry', () => {
   let mod;
   
   before('Require module', () => {
-    mod = require('./entry');
+    mod = require('../entry');
   });
   
   it('Should export MongooseAutoIncrementID', () => {

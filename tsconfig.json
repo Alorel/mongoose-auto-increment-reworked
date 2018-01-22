@@ -21,13 +21,14 @@
     "moduleResolution": "node",
     "sourceMap": true,
     "pretty": true,
+    "outDir": "./",
     "forceConsistentCasingInFileNames": true,
     "allowSyntheticDefaultImports": true,
     "alwaysStrict": true
   },
   "files": [
-    "index.ts",
-    "test.ts"
+    "src/index.ts",
+    "src/test.ts"
   ],
   "exclude": [
     "node_modules"
