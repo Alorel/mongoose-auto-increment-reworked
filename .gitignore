@@ -1,3 +1,8 @@
 /.idea/
 /package-lock.json
 /node_modules/
+/*.d.ts
+/*.js
+/*.js.map
+/coverage/
+/.nyc_output/

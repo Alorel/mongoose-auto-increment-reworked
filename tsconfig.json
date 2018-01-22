@@ -1,0 +1,35 @@
+{
+  "compilerOptions": {
+    "target": "es6",
+    "strict": true,
+    "module": "commonjs",
+    "declaration": true,
+    "noImplicitAny": true,
+    "strictNullChecks": true,
+    "removeComments": false,
+    "experimentalDecorators": true,
+    "emitDecoratorMetadata": false,
+    "noUnusedLocals": true,
+    "noUnusedParameters": true,
+    "newLine": "lf",
+    "stripInternal": true,
+    "noFallthroughCasesInSwitch": true,
+    "suppressImplicitAnyIndexErrors": true,
+    "importHelpers": false,
+    "allowUnreachableCode": false,
+    "allowUnusedLabels": false,
+    "moduleResolution": "node",
+    "sourceMap": true,
+    "pretty": true,
+    "forceConsistentCasingInFileNames": true,
+    "allowSyntheticDefaultImports": true,
+    "alwaysStrict": true
+  },
+  "files": [
+    "index.ts",
+    "test.ts"
+  ],
+  "exclude": [
+    "node_modules"
+  ]
+}
