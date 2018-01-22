@@ -49,7 +49,13 @@ describe('Core', () => {
   before('Connect', function() {
     this.timeout(10000);
 
-    return mongoose.connect('mongodb://127.0.0.1/auto-id-tests');
+    const connectionOptions: any = {};
+
+    if ((mongoose.version || '').charAt(0) === '4') {
+      connectionOptions.useMongoClient = true;
+    }
+
+    return mongoose.connect('mongodb://127.0.0.1/auto-id-tests', connectionOptions);
   });
 
   before('Initialise', () => MongooseAutoIncrementID.initialise());

@@ -7,7 +7,7 @@
     "build": "npm run clean && concurrently tsc \"tsc -p ./tsconfig.with-helpers.json\"",
     "clean": "rimraf ./index.js ./test.js ./*.js.map ./*.d.ts coverage variants",
     "reinstall": "rimraf node_modules package-lock.json && npm install",
-    "tslint": "tslint -p ./tsconfig.json -s node_modules/custom-tslint-formatters/formatters -t grouped index.ts test.ts",
+    "tslint": "tslint -p ./tsconfig.json -s node_modules/custom-tslint-formatters/formatters -t grouped src/index.ts src/test.ts",
     "tslint:fix": "npm run tslint -- --fix",
     "test:debug": "cross-env DEBUG=mongoose-auto-increment-reworked npm test",
     "test": "nyc mocha --exit --check-leaks --full-trace -r ts-node/register -r source-map-support/register src/test.ts",
