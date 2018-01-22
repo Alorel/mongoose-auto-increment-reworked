@@ -122,7 +122,7 @@ export class MongooseAutoIncrementID {
 
     Object.assign(value, this._options);
 
-    value.unique = value.field === '_id' ? false : !!<any>value.unique;
+    value.unique = !!<any>value.unique;
 
     for (const field of Object.keys(value)) {
       log('%s option defined as %s', field, value[field]);
@@ -202,9 +202,12 @@ export class MongooseAutoIncrementID {
   private addFieldToSchema(): void {
     const fieldDef: SchemaTypeOpts<any> = {
       required: false,
-      type: Number,
-      unique: this.options.unique
+      type: Number
     };
+
+    if (this.options.field !== '_id') {
+      fieldDef.unique = this.options.unique;
+    }
 
     log('Field defined as %s', JSON.stringify(fieldDef));
 
@@ -229,7 +232,7 @@ export class MongooseAutoIncrementID {
     const self = this;
 
     log('Adding pre-save hook');
-    this.schema.pre('save', function(this: Document, next: any): void {
+    this.schema.pre('save', function (this: Document, next: any): void {
       debug('Doc save hook triggered');
 
       if (this.isNew) {
