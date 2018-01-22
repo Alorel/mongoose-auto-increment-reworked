@@ -8,6 +8,9 @@ node_js:
   - 6
   - 4
 
+services:
+  - mongodb
+
 cache:
   directories:
     - node_modules
