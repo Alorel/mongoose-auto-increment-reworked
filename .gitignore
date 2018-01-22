@@ -3,6 +3,9 @@
 /node_modules/
 /*.d.ts
 /*.js
+!/entry.js
+!/entry-test.js
 /*.js.map
 /coverage/
 /.nyc_output/
+/variants/

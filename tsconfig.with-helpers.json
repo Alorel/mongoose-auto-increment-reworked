@@ -1,0 +1,12 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "declaration": false,
+    "sourceMap": false,
+    "outDir": "variants/with-tslib",
+    "importHelpers": true
+  },
+  "files": [
+    "index.ts"
+  ]
+}
