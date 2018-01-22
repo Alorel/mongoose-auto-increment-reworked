@@ -6,7 +6,6 @@ node_js:
   - 8
   - 7
   - 6
-  - 4
 
 services:
   - mongodb
@@ -14,6 +13,8 @@ services:
 cache:
   directories:
     - node_modules
+
+before_cache: rm -rf ./node_modules/.cache
 
 after_success: cat ./coverage/lcov.info | coveralls
 before_script:

@@ -12,6 +12,9 @@
     "test:debug": "cross-env DEBUG=mongoose-auto-increment-reworked npm test",
     "test": "nyc mocha --exit --full-trace -r ts-node/register -r source-map-support/register test.ts"
   },
+  "engines": {
+    "node": ">=6.0"
+  },
   "dependencies": {
     "@types/debug": "*",
     "@types/mongoose": "*",
