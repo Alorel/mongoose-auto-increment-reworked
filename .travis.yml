@@ -32,8 +32,9 @@ jobs:
     - stage: *lintStage
       <<: *cachedStage
       script: npm run tslint
-    - <<: *testStageBase
       node_js: &latest_tested 9
+    - <<: *testStageBase
+      node_js: 9
       env:
         - MONGOOSE=5
     - <<: *testStageBase
