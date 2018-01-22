@@ -3,8 +3,7 @@ sudo: false
 language: node_js
 
 stages:
-  - &lintStage Lint
-  - &testStage Test
+  - &testStage Test & Lint
 
 test_stage_base: &testStageBase
   stage: *testStage
@@ -25,6 +24,9 @@ jobs:
       node_js: &latest_tested 9
       env:
         - MONGOOSE=5
+      script:
+        - npm test
+        - npm run tslint
     - <<: *testStageBase
       node_js: 9
       env:
@@ -56,8 +58,3 @@ jobs:
       node_js: 6
       env:
         - MONGOOSE=4
-    - stage: *lintStage
-      node_js: *latest_tested
-      cache:
-        <<: *cache
-      script: npm run tslint
