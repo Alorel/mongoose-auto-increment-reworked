@@ -2,7 +2,7 @@ group: travis_latest
 sudo: false
 language: node_js
 node_js:
-  - 9
+  - &latest_tested 9
   - 8
   - 7
   - 6
