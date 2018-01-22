@@ -31,6 +31,7 @@ jobs:
   include:
     - stage: *lintStage
       <<: *cachedStage
+      before_install: node ./build/filter-lint-depedencies.js
       script: npm run tslint
       node_js: &latest_tested 9
     - <<: *testStageBase
