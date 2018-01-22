@@ -2,6 +2,12 @@ if (process.env.MONGOOSE) {
   const ver = parseInt(process.env.MONGOOSE, 10);
   const pkg = require('../package.json');
   
+  const v = require('./version-is-tampered-with')();
+  if (v) {
+    console.log(`Version overridden by greenkeeper to ${v}. Skipping.`);
+    process.exit(0);
+  }
+  
   switch (ver) {
     case 4:
       pkg.peerDependencies.mongoose = '^4.0.0';
