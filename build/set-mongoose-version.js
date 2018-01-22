@@ -21,7 +21,14 @@ if (process.env.MONGOOSE) {
   fs.writeFileSync(path.resolve(__dirname, '../package.json'), JSON.stringify(pkg, null, 2));
   
   const util = require('util');
-  console.log(util.inspect(pkg, {colors: true}))
+  console.log(util.inspect(
+    {
+      dependencies: pkg.dependencies,
+      peerDependencies: pkg.peerDependencies,
+      devDependencies: pkg.devDependencies
+    },
+    {colors: true}
+  ))
 } else {
   console.log('Skipping: MONGOOSE env variable absent or unsupported');
 }
