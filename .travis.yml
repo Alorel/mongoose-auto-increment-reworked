@@ -34,7 +34,7 @@ jobs:
       before_install:
         - cp package.json package.json.bak
         - node ./build/filter-lint-depedencies.js
-      after_install: mv package.json.bak package.json -f
+      before_script: mv package.json.bak package.json -f
       script: npm run tslint
       node_js: &latest_tested 9
     - <<: *testStageBase
