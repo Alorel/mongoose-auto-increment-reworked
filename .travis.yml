@@ -7,6 +7,11 @@ node_js:
   - 7
   - 6
 
+env:
+  matrix:
+    - MONGOOSE=5
+    - MONGOOSE=4
+
 services:
   - mongodb
 
@@ -14,11 +19,14 @@ cache:
   directories:
     - node_modules
 
+before_install: node ./build/set-mongoose-version.js
+
 before_cache: rm -rf ./node_modules/.cache
 
-after_success: cat ./coverage/lcov.info | coveralls
 before_script:
   - npm run build
   - npm run tslint
 
 script: npm test
+
+after_success: cat ./coverage/lcov.info | coveralls
