@@ -1,26 +1,33 @@
+// tslint:disable:no-unused-expression no-empty no-invalid-this no-duplicate-imports
+
 import {expect} from 'chai';
-import * as mongoose from 'mongoose';
-import {Document, Model, Schema} from 'mongoose';
-import {inspect} from 'util';
-import {v4} from 'uuid';
-import {IdCounterDocument, MongooseAutoIncrementID, NextCountFunction, ResetCountFunction} from './index';
 import isEqual = require('lodash/isEqual');
 import objectValues = require('lodash/values');
+import * as mongoose from 'mongoose';
+import {Document, Model} from 'mongoose';
+import * as util from 'util';
+import {v4} from 'uuid';
+import {IdCounterDocument, MongooseAutoIncrementID, NextCountFunction, ResetCountFunction} from './index';
 
-inspect.defaultOptions = {colors: true};
+function inspect(value: any, opts: util.InspectOptions = {}): string {
+  return util.inspect(value, Object.assign({colors: true}, opts));
+}
 
 (<any>mongoose).Promise = Promise;
+
+const Schema = mongoose.Schema;
 
 interface FooInterface {
   foo: number;
 }
 
-interface FooDocument extends FooInterface, Document, HasFunctions {}
+interface FooDocument extends FooInterface, Document, HasFunctions {
+}
 
 interface HasFunctions {
-  _nextCount: NextCountFunction,
-  _resetCount: NextCountFunction,
-  nextID: NextCountFunction,
+  _nextCount: NextCountFunction;
+  _resetCount: NextCountFunction;
+  nextID: NextCountFunction;
   resetID: ResetCountFunction;
 }
 
@@ -29,7 +36,7 @@ describe('Core', () => {
   // let sch: Schema;
 
   function getModel(): Model<IdCounterDocument> {
-    return <Model<IdCounterDocument>>mongoose.model('IdCounter');
+    return mongoose.model('IdCounter');
   }
 
   function cleanIdCount(): Promise<void> {
@@ -39,8 +46,9 @@ describe('Core', () => {
       });
   }
 
-  before('Connect', function () {
+  before('Connect', function() {
     this.timeout(10000);
+
     return mongoose.connect('mongodb://127.0.0.1/auto-id-tests');
   });
 
@@ -53,7 +61,7 @@ describe('Core', () => {
     after(() => cleanIdCount());
     let doc: IdCounterDocument;
 
-    before('Create sample doc', async () => {
+    before('Create sample doc', async() => {
       doc = await getModel().create({f: 'a', m: 'b'});
     });
 
@@ -73,7 +81,7 @@ describe('Core', () => {
       expect(doc['updatedAt']).to.be.undefined;
     });
 
-    it('Should have an index on f & m', async () => {
+    it('Should have an index on f & m', async() => {
       const indices: any = objectValues(await getModel().collection.getIndexes());
 
       for (const index of indices) {
@@ -94,7 +102,7 @@ describe('Core', () => {
       let model: Model<FooDocument> & HasFunctions;
 
       before('plugin', () => {
-        return new MongooseAutoIncrementID(sch, name).plugin();
+        return new MongooseAutoIncrementID(sch, name).applyPlugin();
       });
 
       before('model', () => {
@@ -114,7 +122,7 @@ describe('Core', () => {
       let model: Model<FooDocument> & HasFunctions;
 
       before('plugin', () => {
-        return new MongooseAutoIncrementID(sch, name, {nextCount: false}).plugin();
+        return new MongooseAutoIncrementID(sch, name, {nextCount: false}).applyPlugin();
       });
 
       before('model', () => {
@@ -135,7 +143,7 @@ describe('Core', () => {
       let model: Model<FooDocument> & HasFunctions;
 
       before('plugin', () => {
-        return new MongooseAutoIncrementID(sch, name, {nextCount: 'nextID'}).plugin();
+        return new MongooseAutoIncrementID(sch, name, {nextCount: 'nextID'}).applyPlugin();
       });
 
       before('model', () => {
@@ -162,6 +170,81 @@ describe('Core', () => {
     });
   });
 
+  describe('resetCount', () => {
+    describe('Should be called _resetCount by default', () => {
+      const name: string = v4();
+      const sch = new Schema({foo: {type: Number, required: true}});
+      let model: Model<FooDocument> & HasFunctions;
+
+      before('plugin', () => {
+        return new MongooseAutoIncrementID(sch, name).applyPlugin();
+      });
+
+      before('model', () => {
+        model = <any>mongoose.model(name, sch);
+      });
+
+      it('On the model', () => {
+        expect(typeof model._resetCount).to.eq('function');
+      });
+      it('On the instance', () => {
+        expect(typeof new model()._resetCount).to.eq('function');
+      });
+    });
+    describe('Should be undefined if false is passed', () => {
+      const name: string = v4();
+      const sch = new Schema({foo: {type: Number, required: true}});
+      let model: Model<FooDocument> & HasFunctions;
+
+      before('plugin', () => {
+        return new MongooseAutoIncrementID(sch, name, {resetCount: false}).applyPlugin();
+      });
+
+      before('model', () => {
+        model = <any>mongoose.model(name, sch);
+      });
+
+      it('On the model', () => {
+        expect(model._resetCount).to.be.undefined;
+      });
+      it('On the instance', () => {
+        expect(new model()._resetCount).to.be.undefined;
+      });
+    });
+
+    describe('Should be renameable', () => {
+      const name: string = v4();
+      const sch = new Schema({foo: {type: Number, required: true}});
+      let model: Model<FooDocument> & HasFunctions;
+
+      before('plugin', () => {
+        return new MongooseAutoIncrementID(sch, name, {resetCount: 'resetID'}).applyPlugin();
+      });
+
+      before('model', () => {
+        model = <any>mongoose.model(name, sch);
+      });
+
+      describe('resetID should exist', () => {
+        it('On the model', () => {
+          expect(typeof model.resetID).to.eq('function');
+        });
+        it('On the instance', () => {
+          expect(typeof new model().resetID).to.eq('function');
+        });
+      });
+
+      describe('_resetCount should not exist', () => {
+        it('On the model', () => {
+          expect(model._resetCount).to.be.undefined;
+        });
+        it('On the instance', () => {
+          expect(new model()._resetCount).to.be.undefined;
+        });
+      });
+    });
+  });
+
   // before('Init Schema', () => {
   //   sch = new Schema({
   //                      foo: {
@@ -176,7 +259,7 @@ describe('Core', () => {
   //     resetCount: 'resetID'
   //   });
   //
-  //   return ai.plugin();
+  //   return ai.applyPlugin();
   // });
   //
   // before('Init model', () => {

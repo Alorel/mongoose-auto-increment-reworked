@@ -42,15 +42,6 @@ jobs:
         - MONGOOSE=4
 
     - <<: *testStageBase
-      node_js: 7
-      env:
-        - MONGOOSE=5
-    - <<: *testStageBase
-      node_js: 7
-      env:
-        - MONGOOSE=4
-
-    - <<: *testStageBase
       node_js: 6
       env:
         - MONGOOSE=5

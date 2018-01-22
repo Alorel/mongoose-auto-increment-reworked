@@ -14,7 +14,8 @@ export interface IdCounterModel {
 }
 
 /** @internal */
-export interface IdCounterDocument extends IdCounterModel, Document {}
+export interface IdCounterDocument extends IdCounterModel, Document {
+}
 
 const log = debug('mongoose-auto-increment-reworked');
 
@@ -145,7 +146,7 @@ export class MongooseAutoIncrementID {
     MongooseAutoIncrementID.initialised = true;
   }
 
-  public plugin(): Promise<void> {
+  public applyPlugin(): Promise<void> {
     log('Running plugin initialisation on %s', this.model);
 
     if (!MongooseAutoIncrementID.initialised) {
