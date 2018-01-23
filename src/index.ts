@@ -104,10 +104,7 @@ export interface PluginOptions {
   unique: boolean;
 }
 
-/**
- * Mongoose plugin for automatically generating auto-incrementing IDs
- * @author https://github.com/Alorel
- */
+/** Mongoose plugin for automatically generating auto-incrementing IDs */
 export class MongooseAutoIncrementID {
   /** The model instance */
   private static idCounter: Model<IdCounterDocument>;

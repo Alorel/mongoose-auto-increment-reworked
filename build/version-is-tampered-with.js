@@ -18,3 +18,7 @@ module.exports = versionIsTamperedWith;
 if (process.argv.indexOf('--echo') !== -1) {
   console.log(versionIsTamperedWith() || '0')
 }
+
+if (process.argv.indexOf('--exit') !== -1) {
+  process.exit(versionIsTamperedWith() ?  1 : 0);
+}

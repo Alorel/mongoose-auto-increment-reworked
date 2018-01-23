@@ -5,6 +5,8 @@ language: node_js
 stages:
   - &lintStage Lint
   - &testStage Test
+  - name: &releaseStage Release
+    if: tag IS present
 
 cached_stage: &cachedStage
   cache: &cache
@@ -17,9 +19,7 @@ test_stage_base: &testStageBase
   stage: *testStage
   services:
     - mongodb
-  before_install:
-    - if [[ $(node build/version-is-tampered-with.js --echo) != "0" ]]; then echo tampered; else echo not tampered; fi;
-    - node ./build/set-mongoose-version.js
+  before_install: node ./build/set-mongoose-version.js
   script:
     - npm test
     - npm run test:entry
@@ -65,3 +65,16 @@ jobs:
       node_js: 6
       env:
         - MONGOOSE=4
+
+    - stage: *releaseStage
+      <<: *cachedStage
+      script: node ./build/version-is-tampered-with.js --echo --exit
+      before_script: npm run build
+      deploy:
+        - provider: npm
+          on:
+            tags: true
+          skip_cleanup: true
+          email: a.molcanovas@gmail.com
+          api_key:
+            secure: "pTE7TQoDjwJaiSrLvDzryD/J6ZN+0u0pW/OysbbFp43i45oAm+7xGfDKggoeaaKIGoVrzA8A7u8G8L7UaU5xgIS2q19bAiXxewztuNQzM/8MQ/xDMP3OEetXUiN4ZzsOiE78OMCh+riFcnAoIsDMv7kg2/kj9EzK3YsWybwHTST2su0/xrDAd42SaEcJ14FT5o9nzfV86mpbScP1XZUBWx2BmLHcZHQrzKtayPE2E83MOSO9Z//KclxQTZWsHhgJDlMglZU83aoUpbbT/bSrlTVgsc1q2imlBNEYSBq08slQUlivjeweL49rWOFWXu/7QzlSPOUSxA59hIsiNV2uBic5z/4taRjTRYSs1skH78SrGv2yS24JcG9MrpORR0pc39Qj4am4XcTbp2CsZdxdLNshgoKM3Jn7ulsEePFvX/PhkeDe6pNaILvNsDU2fUV7pA0JG2GwEsSrBDPMfFicx4VH1ax8NnQlZSR1uQ2C8bzduc0YYwlIE85cfFd2+csZ3hpQkEDpOKSJANkA8O0qdJsg5/bKBvsB4SXb92FpxYq+xHbsCWASO7pvekBK7fhKJugv//xkSul2OYSGhYYWnNfLEkw9AdTOCzMX84e9+RxKEsYcfFz08Rsg/81rIR44fS8SDJ/hBgY1Mk4vkNKr8uf1m6I/GMd5NdPO1tNPY3M="
