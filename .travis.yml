@@ -64,6 +64,7 @@ jobs:
         - MONGOOSE=4
 
     - stage: *releaseStage
+      node_js: *latest_tested
       script: node ./build/version-is-tampered-with.js --echo --exit
       before_script: npm run build
       deploy:
