@@ -1,0 +1,14 @@
+/.idea/
+/src/
+/test.d.ts
+/test.js
+/*.map
+/.travis.yml
+/coverage/
+/.nyc_output/
+/.nycrc
+/.gitignore
+/*.tgz
+/build/
+/tsconfig.json
+/tsconfig.with-helpers.json
