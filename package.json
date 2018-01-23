@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "description": "An auto-incrementing field generator for Mongoose 4 & 5",
   "main": "entry.js",
+  "types": "index.d.ts",
   "scripts": {
     "build": "npm run clean && concurrently tsc \"tsc -p ./tsconfig.with-helpers.json\"",
     "clean": "rimraf ./index.js ./test.js ./*.js.map ./*.d.ts coverage variants",
@@ -47,7 +48,19 @@
     "typescript": "^2.6.0",
     "uuid": "^3.2.1"
   },
-  "keywords": [],
+  "keywords": [
+    "mongoose",
+    "auto-increment",
+    "id",
+    "generate",
+    "numeric",
+    "mongo",
+    "mongodb",
+    "db",
+    "auto",
+    "increment",
+    "incremented"
+  ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/Alorel/mongoose-auto-increment-reworked.git"

@@ -2,25 +2,37 @@ import debug = require('debug');
 import {Document, model, Model, Schema, SchemaTypeOpts} from 'mongoose';
 import {LazyGetter} from 'typescript-lazy-get-decorator';
 
+/** Static configuration */
 const enum Conf {
   RETRY_TIMEOUT = 5
 }
 
-/** @internal */
+/**
+ * The model interface
+ * @internal
+ */
 export interface IdCounterModel {
+  /** Current counter */
   c: number;
+  /** Field name */
   f: string;
+  /** Model name */
   m: string;
 }
 
-/** @internal */
+/**
+ * Document interface
+ * @internal
+ */
 export interface IdCounterDocument extends IdCounterModel, Document {
 }
 
+/** Debug logger */
 const log = debug('mongoose-auto-increment-reworked');
 
 log('Creating schema');
 
+/** Schema definition */
 const idCounterSchema = new Schema(
   {
     c: {
@@ -38,7 +50,7 @@ const idCounterSchema = new Schema(
     },
   },
   {
-    autoIndex: true,
+    autoIndex: true, // the collection will always be tiny; no problem if we autoIndex in production
     id: false,
     skipVersioning: true,
     timestamps: false,
@@ -50,26 +62,75 @@ log('Defining index');
 
 idCounterSchema.index({f: 1, m: 1}, {unique: true});
 
+/** Function for getting the next counter value */
 export type NextCountFunction = () => Promise<number>;
+
+/** Function for resetting the current counter value */
 export type ResetCountFunction = NextCountFunction;
 
+/** Plugin configuration */
 export interface PluginOptions {
+  /**
+   * The field that will be automatically incremented. Do not define this in your schema.
+   * @default _id
+   */
   field: string;
+  /**
+   * How much every insert should increment the counter by
+   * @default 1
+   */
   incrementBy: number;
+  /**
+   * The name of the function for getting the next ID number.
+   * Set this to false to prevent the function from being added to the schema's static and instance methods.
+   * @default _nextCount
+   */
   nextCount: string | false;
+  /**
+   * The name of the function for resetting the ID number
+   * Set this to false to prevent the function from being added to the schema's static and instance methods.
+   * @default _resetCount
+   */
   resetCount: string | false;
+  /**
+   * The first number that will be generated
+   * @default 1
+   */
   startAt: number;
+  /**
+   * Whether or not to add a unique index on the field. This option is ignored if the field name is _id.
+   * @default true
+   */
   unique: boolean;
 }
 
+/**
+ * Mongoose plugin for automatically generating auto-incrementing IDs
+ * @author https://github.com/Alorel
+ */
 export class MongooseAutoIncrementID {
+  /** The model instance */
   private static idCounter: Model<IdCounterDocument>;
+  /** User-provided options */
   private readonly _options: Partial<PluginOptions>;
+  /** Name of the model we're working with */
   private readonly model: string;
+  /** Whether or not the initialisation has completed */
   private ready = false;
+  /** Whether or not the initialisation has faled */
   private rejected = false;
+  /** Schema to apply the plugin to. */
+  private readonly schema: Schema;
 
-  public constructor(private readonly schema: Schema,
+  /**
+   * Create a new plugin instance
+   * @param schema Schema to apply the plugin to. Must be an instance of Mongoose Schema
+   * @param modelName Name of the model that this schema will use.
+   * @param options Plugin configuration
+   * @throws {TypeError} If schema is not given or is not an instance of Mongoose Schema
+   * @throws {TypeError} If modelName is not given or is not a string
+   */
+  public constructor(schema: Schema,
                      modelName: string,
                      options: Partial<PluginOptions> = {}) {
 
@@ -83,9 +144,11 @@ export class MongooseAutoIncrementID {
 
     debug(`Model name set to ${modelName}`);
     this.model = modelName;
+    this.schema = schema;
     this._options = options;
   }
 
+  /** Default arguments for querying the id counter collection */
   @LazyGetter()
   private get findArgs(): Readonly<Pick<IdCounterModel, 'f' | 'm'>> {
     const out: Pick<IdCounterModel, 'f' | 'm'> = {
@@ -98,6 +161,7 @@ export class MongooseAutoIncrementID {
     return Object.freeze(out);
   }
 
+  /** The initial counter value */
   @LazyGetter()
   private get initialStart(): number {
     const ret: number = this.options.startAt - this.options.incrementBy;
@@ -107,6 +171,7 @@ export class MongooseAutoIncrementID {
     return ret;
   }
 
+  /** User-supplied options merged with defaults */
   @LazyGetter()
   private get options(): Readonly<PluginOptions> {
     const value: PluginOptions = {
@@ -129,6 +194,12 @@ export class MongooseAutoIncrementID {
     return Object.freeze(value);
   }
 
+  /**
+   * Perform initialisation of the plugin's model. You only need to call this once per application.
+   * @param modelName Name of the plugin model
+   * @throws {Error} If this gets called more than once
+   * @throws {TypeError} If model name is empty or not a string. Won't happen if you omit the parameter.
+   */
   public static initialise(modelName = 'IdCounter'): void {
     log('Performing static initialisation with name %s', modelName);
     if (MongooseAutoIncrementID.idCounter) {
@@ -142,6 +213,12 @@ export class MongooseAutoIncrementID {
     MongooseAutoIncrementID.idCounter = model<IdCounterDocument>(modelName, idCounterSchema);
   }
 
+  /**
+   * Apply the plugin to the given schema
+   * @returns A void promise that resolves when the initialisation has completed. You do not need to wait for the
+   *   promise to resolve - any document insertion queries will be queued until the initialisation completes. You
+   *   should, however, catch any errors if this promise rejects.
+   */
   public applyPlugin(): Promise<void> {
     log('Running plugin initialisation on %s', this.model);
 
@@ -168,6 +245,10 @@ export class MongooseAutoIncrementID {
     }
   }
 
+  /**
+   * Validates the options supplied by the user
+   * @throws {TypeError} if a validation fails
+   */
   public validateOptions(): void {
     log('Validating options');
     log('Validating field');
@@ -196,6 +277,7 @@ export class MongooseAutoIncrementID {
     }
   }
 
+  /** Add the field containing our auto-incremented ID to the schema definition */
   private addFieldToSchema(): void {
     const fieldDef: SchemaTypeOpts<any> = {
       required: false,
@@ -212,6 +294,7 @@ export class MongooseAutoIncrementID {
     this.schema.add({[this.options.field]: fieldDef});
   }
 
+  /** Add the next count function if enabled */
   private addNextCount(): void {
     if (this.options.nextCount) {
       log('Adding %s instance and static methods for %s', this.options.nextCount, this.model);
@@ -224,6 +307,7 @@ export class MongooseAutoIncrementID {
     }
   }
 
+  /** Add the pre-save hook to the schema that will generate our IDs */
   private addPreSave(): void {
     // tslint:disable-next-line:no-this-assignment
     const self = this;
@@ -232,13 +316,16 @@ export class MongooseAutoIncrementID {
     this.schema.pre('save', function(this: Document, next: any): void {
       debug('Doc save hook triggered');
 
+      // Only work with new documents
       if (this.isNew) {
         log('Document is new');
 
+        // Plugin might not be ready yet. Define a save function
         const save = () => {
           if (self.ready) {
             log('Plugin ready. Performing onSave logic.');
 
+            // The payload contains a numeric value on the field. Update the ID counter collection if necessary.
             if (typeof this[self.options.field] === 'number') {
               log('%s is a number: %d', self.options.field, self.options.field);
 
@@ -248,6 +335,7 @@ export class MongooseAutoIncrementID {
             } else {
               log('%s is not a number: %s', self.options.field, JSON.stringify(this[self.options.field]));
 
+              // Fiels does not contain an ID or is NaN. Generate the next value and set it on the payload.
               self.onSaveAnyField()
                 .then((newCount: number): void => {
                   this[self.options.field] = newCount;
@@ -264,6 +352,7 @@ export class MongooseAutoIncrementID {
           }
         };
 
+        // Immediately call the save function
         setImmediate(save);
       } else {
         log('Document is not new; skipping.');
@@ -272,6 +361,7 @@ export class MongooseAutoIncrementID {
     });
   }
 
+  /** Add the reset count function if enabled */
   private addResetCount(): void {
     if (this.options.resetCount) {
       log('Adding %s instance and static methods for %s', this.options.resetCount, this.model);
@@ -284,13 +374,14 @@ export class MongooseAutoIncrementID {
     }
   }
 
+  /** Initialise the counter for this schema */
   private init(): Promise<void> {
     log('Performing plugin initialisation');
 
     return MongooseAutoIncrementID.idCounter.findOne(this.findArgs, {_id: 1})
       .lean()
       .then((doc: any): void | Promise<void> => {
-        if (!doc) {
+        if (!doc) { // No counter document found. Create one
           const payload: IdCounterModel = {
             c: this.initialStart,
             f: this.options.field,
@@ -304,11 +395,13 @@ export class MongooseAutoIncrementID {
               this.ready = true;
             });
         } else {
+          // All good
           this.ready = true;
         }
       });
   }
 
+  /** Method for getting the next ID */
   private nextCountFn(): Promise<number> {
     return (<Promise<IdCounterModel>>MongooseAutoIncrementID.idCounter.findOne(this.findArgs, {c: 1}).lean().exec())
       .then((doc: IdCounterModel): number => {
@@ -316,6 +409,7 @@ export class MongooseAutoIncrementID {
       });
   }
 
+  /** Generate the next ID, update counter document, return ID */
   private onSaveAnyField(): Promise<number> {
     return (<Promise<IdCounterModel>>MongooseAutoIncrementID.idCounter
       .findOneAndUpdate(
@@ -328,6 +422,7 @@ export class MongooseAutoIncrementID {
       .then((doc: IdCounterModel): number => doc.c);
   }
 
+  /** Synchronise the ID provided in the document with the database value */
   private onSaveNumberField(value: number): Promise<any> {
     return MongooseAutoIncrementID.idCounter
       .findOneAndUpdate(
@@ -339,6 +434,10 @@ export class MongooseAutoIncrementID {
       .exec();
   }
 
+  /**
+   * Method for resetting the counter
+   * @returns Promise containing this.options.startAt
+   */
   private resetCountFn(): Promise<number> {
     return MongooseAutoIncrementID.idCounter
       .findOneAndUpdate(
