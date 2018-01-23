@@ -20,12 +20,7 @@ test_stage_base: &testStageBase
   services:
     - mongodb
   before_install: node ./build/set-mongoose-version.js
-  script:
-    - npm test
-    - npm run test:entry
-    - mv ./node_modules/tslib ./node_modules/tslib.bak
-    - npm run test:entry
-    - mv ./node_modules/tslib.bak ./node_modules/tslib
+  script: npm test
   before_script: npm run build
   after_success: cat ./coverage/lcov.info | coveralls
 
@@ -33,12 +28,14 @@ jobs:
   include:
     - stage: *lintStage
       <<: *cachedStage
+      node_js: &latest_tested 9
+      env:
+        - LINT=1
       before_install:
         - cp package.json package.json.bak
         - node ./build/filter-lint-depedencies.js
       before_script: mv package.json.bak package.json -f
       script: npm run tslint
-      node_js: &latest_tested 9
     - <<: *testStageBase
       node_js: 9
       env:
@@ -67,7 +64,6 @@ jobs:
         - MONGOOSE=4
 
     - stage: *releaseStage
-      <<: *cachedStage
       script: node ./build/version-is-tampered-with.js --echo --exit
       before_script: npm run build
       deploy:

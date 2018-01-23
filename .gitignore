@@ -8,5 +8,4 @@
 /*.js.map
 /coverage/
 /.nyc_output/
-/variants/
 /*.tgz
