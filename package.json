@@ -17,7 +17,6 @@
     "node": ">=6.0"
   },
   "dependencies": {
-    "@types/debug": "*",
     "@types/mongoose": "*",
     "debug": "^3.0.0",
     "typescript-lazy-get-decorator": "^1.0.0"
@@ -27,6 +26,7 @@
   },
   "devDependencies": {
     "@types/chai": "^4.1.1",
+    "@types/debug": "^0.0.30",
     "@types/lodash": "^4.14.93",
     "@types/mocha": "^2.2.46",
     "@types/node": "^6.0.0",
