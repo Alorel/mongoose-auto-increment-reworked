@@ -104,6 +104,27 @@ export interface PluginOptions {
   unique: boolean;
 }
 
+/**
+ * A plugin instante's ready state
+ * @internal
+ */
+export interface ReadyState {
+  /** Any error, if thrown */
+  error?: Error;
+  /** Ready promise */
+  promise: Promise<void>;
+  /** Whether or not the plugin has finished initialising */
+  ready?: true;
+}
+
+/** Ready states mappings */
+interface ReadyStates {
+  [modelName: string]: ReadyState;
+}
+
+/** Map containing ready states */
+const readyMap = new WeakMap<Schema, ReadyStates>();
+
 /** Mongoose plugin for automatically generating auto-incrementing IDs */
 export class MongooseAutoIncrementID {
   /** The model instance */
@@ -112,10 +133,6 @@ export class MongooseAutoIncrementID {
   private readonly _options: Partial<PluginOptions>;
   /** Name of the model we're working with */
   private readonly model: string;
-  /** Whether or not the initialisation has completed */
-  private ready = false;
-  /** Whether or not the initialisation has faled */
-  private rejected = false;
   /** Schema to apply the plugin to. */
   private readonly schema: Schema;
 
@@ -143,6 +160,19 @@ export class MongooseAutoIncrementID {
     this.model = modelName;
     this.schema = schema;
     this._options = options;
+  }
+
+  public get error(): Error | undefined {
+    return this.state.error;
+  }
+
+  /** Whether or not the initialisation has completed */
+  public get isReady(): boolean {
+    return !!this.state.ready;
+  }
+
+  public get promise(): Promise<void> {
+    return this.state.promise;
   }
 
   /** Default arguments for querying the id counter collection */
@@ -191,6 +221,25 @@ export class MongooseAutoIncrementID {
     return Object.freeze(value);
   }
 
+  @LazyGetter()
+  private get state(): ReadyState {
+    let states: ReadyStates = <ReadyStates>readyMap.get(this.schema);
+
+    if (!states) {
+      states = {};
+      readyMap.set(this.schema, states);
+    }
+
+    let state: ReadyState = states[this.model];
+
+    if (!state) {
+      state = <any>{};
+      states[this.model] = state;
+    }
+
+    return state;
+  }
+
   /**
    * Perform initialisation of the plugin's model. You only need to call this once per application.
    * @param modelName Name of the plugin model
@@ -211,6 +260,43 @@ export class MongooseAutoIncrementID {
   }
 
   /**
+   * Validates the options supplied by the user
+   * @param options The options to validate
+   * @throws {TypeError} if a validation fails
+   */
+  private static validateOptions(options: PluginOptions): void {
+    log('Validating options');
+    if (!options) {
+      throw new TypeError('Options missing');
+    }
+
+    log('Validating field');
+    if (typeof options.field !== 'string') {
+      throw new TypeError('field must be a string');
+    }
+
+    log('Validating incrementBy');
+    if (typeof options.incrementBy !== 'number') {
+      throw new TypeError('incrementBy must be a number');
+    }
+
+    log('Validating nextCount');
+    if (typeof options.nextCount !== 'string' && options.nextCount !== false) {
+      throw new TypeError('nextCount must be a string or false');
+    }
+
+    log('Validating resetCount');
+    if (typeof options.resetCount !== 'string' && options.resetCount !== false) {
+      throw new TypeError('resetCount must be a string or false');
+    }
+
+    log('Validating startAt');
+    if (typeof options.startAt !== 'number') {
+      throw new TypeError('startAt must be a number');
+    }
+  }
+
+  /**
    * Apply the plugin to the given schema
    * @returns A void promise that resolves when the initialisation has completed. You do not need to wait for the
    *   promise to resolve - any document insertion queries will be queued until the initialisation completes. You
@@ -220,7 +306,10 @@ export class MongooseAutoIncrementID {
     log('Running plugin initialisation on %s', this.model);
 
     if (!MongooseAutoIncrementID.idCounter) {
-      return Promise.reject(new Error('The initialise method has not been called'));
+      this.state.error = new Error('The initialise method has not been called');
+      this.state.promise = Promise.reject(this.state.error);
+
+      return this.state.promise;
     }
 
     try {
@@ -230,15 +319,18 @@ export class MongooseAutoIncrementID {
       this.addResetCount();
       this.addPreSave();
 
-      return this.init()
+      this.state.promise = this.init()
         .catch((e: any) => {
-          this.rejected = true;
+          this.state.error = e;
           throw e;
         });
-    } catch (e) {
-      this.rejected = true;
 
-      return Promise.reject(e);
+      return this.state.promise;
+    } catch (e) {
+      this.state.error = e;
+      this.state.promise = Promise.reject(this.state.error);
+
+      return this.state.promise;
     }
   }
 
@@ -247,31 +339,7 @@ export class MongooseAutoIncrementID {
    * @throws {TypeError} if a validation fails
    */
   public validateOptions(): void {
-    log('Validating options');
-    log('Validating field');
-    if (typeof this.options.field !== 'string') {
-      throw new TypeError('field must be a string');
-    }
-
-    log('Validating incrementBy');
-    if (typeof this.options.incrementBy !== 'number') {
-      throw new TypeError('incrementBy must be a number');
-    }
-
-    log('Validating nextCount');
-    if (typeof this.options.nextCount !== 'string' && this.options.nextCount !== false) {
-      throw new TypeError('nextCount must be a string or false');
-    }
-
-    log('Validating resetCount');
-    if (typeof this.options.resetCount !== 'string' && this.options.resetCount !== false) {
-      throw new TypeError('resetCount must be a string or false');
-    }
-
-    log('Validating startAt');
-    if (typeof this.options.startAt !== 'number') {
-      throw new TypeError('startAt must be a number');
-    }
+    MongooseAutoIncrementID.validateOptions(this.options);
   }
 
   /** Add the field containing our auto-incremented ID to the schema definition */
@@ -319,7 +387,7 @@ export class MongooseAutoIncrementID {
 
         // Plugin might not be ready yet. Define a save function
         const save = () => {
-          if (self.ready) {
+          if (self.isReady) {
             log('Plugin ready. Performing onSave logic.');
 
             // The payload contains a numeric value on the field. Update the ID counter collection if necessary.
@@ -340,7 +408,7 @@ export class MongooseAutoIncrementID {
                 })
                 .catch(next);
             }
-          } else if (!self.rejected) {
+          } else if (!self.error) {
             log('Plugin not ready yet; waiting for %d ms before retrying', Conf.RETRY_TIMEOUT);
             setTimeout(save, Conf.RETRY_TIMEOUT);
           } else {
@@ -389,11 +457,11 @@ export class MongooseAutoIncrementID {
           return MongooseAutoIncrementID.idCounter.create(payload)
             .then(() => {
               log('Counter document for %s created', this.model);
-              this.ready = true;
+              this.state.ready = true;
             });
         } else {
           // All good
-          this.ready = true;
+          this.state.ready = true;
         }
       });
   }

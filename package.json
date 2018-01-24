@@ -6,12 +6,12 @@
   "types": "index.d.ts",
   "scripts": {
     "build": "npm run clean && tsc",
+    "typecheck": "tsc --noEmit",
     "clean": "rimraf ./index.js ./test.js ./*.js.map ./*.d.ts coverage",
     "tslint": "tslint -p ./tsconfig.json -s node_modules/custom-tslint-formatters/formatters -t grouped src/index.ts src/test.ts",
     "tslint:fix": "npm run tslint -- --fix",
     "test:debug": "cross-env DEBUG=mongoose-auto-increment-reworked npm test",
-    "test": "nyc mocha --throw-deprecation -t 10000 --exit --check-leaks --full-trace -r ts-node/register -r source-map-support/register src/test.ts",
-    "test:entry": "cross-env DEBUG=mongoose-auto-increment-reworked mocha --full-trace src/entry-test.js"
+    "test": "nyc mocha --throw-deprecation -t 10000 --exit --check-leaks --full-trace -r ts-node/register -r source-map-support/register src/test.ts"
   },
   "engines": {
     "node": ">=6.0"

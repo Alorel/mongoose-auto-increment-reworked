@@ -21,7 +21,7 @@ test_stage_base: &testStageBase
     - mongodb
   before_install: node ./build/set-mongoose-version.js
   script: npm test
-  before_script: npm run build
+  before_script: npm run typecheck
   after_success: cat ./coverage/lcov.info | coveralls
 
 jobs:
