@@ -573,7 +573,7 @@ describe('Core', () => {
     p.applyPlugin()
       .then(async() => {
         const m: Model<any> = mongoose.model(name, sch);
-        p['state'].ready = false;
+        p['state'].ready = <any>false;
 
         setTimeout(
           () => {
@@ -596,7 +596,7 @@ describe('Core', () => {
     p.applyPlugin()
       .then(() => {
         const mod: Model<any> = mongoose.model<any>(name, sch);
-        p['state'].ready = false;
+        p['state'].ready = <any>false;
         p['state'].error = new Error();
 
         console.log(p['state']);
@@ -638,7 +638,7 @@ describe('Core', () => {
 
   describe('promise getter', function() {
     let name: string;
-    let sch: Schema;
+    let sch: mongoose.Schema;
     let p: MongooseAutoIncrementID;
 
     beforeEach(() => {
@@ -659,7 +659,7 @@ describe('Core', () => {
 
   describe('isReady getter', function() {
     let name: string;
-    let sch: Schema;
+    let sch: mongoose.Schema;
     let p: MongooseAutoIncrementID;
 
     beforeEach(() => {
@@ -669,7 +669,7 @@ describe('Core', () => {
     });
 
     it('Should be false if state.ready is false', () => {
-      p['state'].ready = false;
+      p['state'].ready = <any>false;
       expect(p.isReady).to.be.false;
     });
 
@@ -681,7 +681,7 @@ describe('Core', () => {
 
   describe('error getter', function() {
     let name: string;
-    let sch: Schema;
+    let sch: mongoose.Schema;
     let p: MongooseAutoIncrementID;
 
     beforeEach(() => {
