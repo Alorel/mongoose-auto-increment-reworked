@@ -363,10 +363,17 @@ export class MongooseAutoIncrementID {
   private addNextCount(): void {
     if (this.options.nextCount) {
       log('Adding %s instance and static methods for %s', this.options.nextCount, this.model);
-      this.nextCountFn = this.nextCountFn.bind(this);
+      const fn = () => {
+        const exec = MongooseAutoIncrementID.idCounter.findOne(this.findArgs, {c: 1}).lean().exec();
 
-      this.schema.static(this.options.nextCount, this.nextCountFn);
-      this.schema.method(this.options.nextCount, this.nextCountFn);
+        return (<Promise<IdCounterModel>>exec)
+          .then((doc: IdCounterModel): number => {
+            return doc === null ? this.options.startAt : doc.c + this.options.incrementBy;
+          });
+      };
+
+      this.schema.static(this.options.nextCount, fn);
+      this.schema.method(this.options.nextCount, fn);
     } else {
       log('Skipping nextCount methods for %s', this.model);
     }
@@ -430,10 +437,19 @@ export class MongooseAutoIncrementID {
   private addResetCount(): void {
     if (this.options.resetCount) {
       log('Adding %s instance and static methods for %s', this.options.resetCount, this.model);
-      this.resetCountFn = this.resetCountFn.bind(this);
+      const fn = () => {
+        return MongooseAutoIncrementID.idCounter
+          .findOneAndUpdate(
+            this.findArgs,
+            {c: this.initialStart},
+            {new: true, upsert: true, fields: {_id: 1}}
+          )
+          .lean()
+          .then((): number => this.options.startAt);
+      };
 
-      this.schema.static(this.options.resetCount, this.resetCountFn);
-      this.schema.method(this.options.resetCount, this.resetCountFn);
+      this.schema.static(this.options.resetCount, fn);
+      this.schema.method(this.options.resetCount, fn);
     } else {
       log('Skipping resetCount methods for %s', this.model);
     }
@@ -466,14 +482,6 @@ export class MongooseAutoIncrementID {
       });
   }
 
-  /** Method for getting the next ID */
-  private nextCountFn(): Promise<number> {
-    return (<Promise<IdCounterModel>>MongooseAutoIncrementID.idCounter.findOne(this.findArgs, {c: 1}).lean().exec())
-      .then((doc: IdCounterModel): number => {
-        return doc === null ? this.options.startAt : doc.c + this.options.incrementBy;
-      });
-  }
-
   /** Generate the next ID, update counter document, return ID */
   private onSaveAnyField(): Promise<number> {
     return (<Promise<IdCounterModel>>MongooseAutoIncrementID.idCounter
@@ -497,20 +505,5 @@ export class MongooseAutoIncrementID {
       )
       .lean()
       .exec();
-  }
-
-  /**
-   * Method for resetting the counter
-   * @returns Promise containing this.options.startAt
-   */
-  private resetCountFn(): Promise<number> {
-    return MongooseAutoIncrementID.idCounter
-      .findOneAndUpdate(
-        this.findArgs,
-        {c: this.initialStart},
-        {new: true, upsert: true, fields: {_id: 1}}
-      )
-      .lean()
-      .then((): number => this.options.startAt);
   }
 }
