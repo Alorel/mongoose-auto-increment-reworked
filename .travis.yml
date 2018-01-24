@@ -66,7 +66,7 @@ jobs:
     - stage: *releaseStage
       node_js: *latest_tested
       script: node ./build/version-is-tampered-with.js --echo --exit
-      before_script: npm run build
+      before_script: npm run build -- --sourceMap false
       deploy:
         - provider: npm
           on:
