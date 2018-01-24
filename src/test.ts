@@ -1,13 +1,13 @@
 // tslint:disable:no-unused-expression no-empty no-invalid-this no-duplicate-imports
 
 import {expect} from 'chai';
+import isEqual = require('lodash/isEqual');
+import objectValues = require('lodash/values');
 import * as mongoose from 'mongoose';
 import {Document, Model} from 'mongoose';
 import * as util from 'util';
 import {v4} from 'uuid';
 import {IdCounterDocument, MongooseAutoIncrementID, NextCountFunction, ResetCountFunction} from './index';
-import isEqual = require('lodash/isEqual');
-import objectValues = require('lodash/values');
 
 function inspect(value: any, opts: util.InspectOptions = {}): string {
   return util.inspect(value, Object.assign({colors: true}, opts));
@@ -145,7 +145,7 @@ describe('Core', () => {
     after(() => cleanIdCount());
     let doc: IdCounterDocument;
 
-    before('Create sample doc', async () => {
+    before('Create sample doc', async() => {
       doc = await getModel().create({f: 'a', m: 'b'});
     });
 
@@ -165,7 +165,7 @@ describe('Core', () => {
       expect(doc['updatedAt']).to.be.undefined;
     });
 
-    it('Should have an index on f & m', async () => {
+    it('Should have an index on f & m', async() => {
       const indices: any = objectValues(await getModel().collection.getIndexes());
 
       for (const index of indices) {
@@ -347,16 +347,16 @@ describe('Core', () => {
       });
     });
 
-    it('Should return 1 for the first doc', async () => {
+    it('Should return 1 for the first doc', async() => {
       expect(await mod._nextCount()).to.eq(1);
     });
 
-    it('Should return 2 for the second doc', async () => {
+    it('Should return 2 for the second doc', async() => {
       await mod.create({foo: v4()});
       expect(await mod._nextCount()).to.eq(2);
     });
 
-    it('Should return 1 if counter doc is removed', async () => {
+    it('Should return 1 if counter doc is removed', async() => {
       await cleanIdCount();
       expect(await mod._nextCount()).to.eq(1);
     });
@@ -387,11 +387,11 @@ describe('Core', () => {
 
     after(() => initialise());
 
-    it('nextCount should not return 1 initially', async () => {
+    it('nextCount should not return 1 initially', async() => {
       expect(await mod._nextCount()).to.not.eq(1);
     });
 
-    it('nextCount should return 1 after resetting', async () => {
+    it('nextCount should return 1 after resetting', async() => {
       await mod._resetCount();
       expect(await mod._nextCount()).to.eq(1);
     });
@@ -473,7 +473,7 @@ describe('Core', () => {
   describe('init', () => {
     before('clear', () => cleanIdCount());
 
-    it('Should still resolve the promise and flag itself as ready when the counter doc exists', async () => {
+    it('Should still resolve the promise and flag itself as ready when the counter doc exists', async() => {
       const name: string = v4();
       const sch = new Schema({foo: {type: Number}});
 
@@ -537,7 +537,7 @@ describe('Core', () => {
   });
 
   describe('addFieldToSchema', () => {
-    it('Should add a unique index if field is not _id', async () => {
+    it('Should add a unique index if field is not _id', async() => {
       const sch = new Schema({foo: {type: Number}});
       const name: string = v4();
       const plugin = new MongooseAutoIncrementID(sch, name, {field: 'bar'});
@@ -551,7 +551,7 @@ describe('Core', () => {
     });
   });
 
-  it('Save hook should trigger even if doc is not new', async () => {
+  it('Save hook should trigger even if doc is not new', async() => {
     const sch = new Schema({foo: {type: String}});
     const name: string = v4();
     const p = new MongooseAutoIncrementID(sch, name);
@@ -571,7 +571,7 @@ describe('Core', () => {
     const name: string = v4();
     const p = new MongooseAutoIncrementID(sch, name);
     p.applyPlugin()
-      .then(async () => {
+      .then(async() => {
         const m: Model<any> = mongoose.model(name, sch);
         p['state'].ready = false;
 
@@ -615,7 +615,7 @@ describe('Core', () => {
   describe('Save hook with numeric field', () => {
     let mod: Model<any> & HasFunctions;
 
-    before(async () => {
+    before(async() => {
       const name: string = v4();
       const sch = new Schema({foo: {type: String}});
       const p = new MongooseAutoIncrementID(sch, name);
@@ -625,12 +625,12 @@ describe('Core', () => {
       await mod.create({foo: v4()});
     });
 
-    it('Should set counter to 5 if value > currently stored', async () => {
+    it('Should set counter to 5 if value > currently stored', async() => {
       await new mod({_id: 5, foo: v4()}).save();
       expect(await mod._nextCount()).to.eq(6);
     });
 
-    it('Should not update value if value < currently stored', async () => {
+    it('Should not update value if value < currently stored', async() => {
       await new mod({_id: 2, foo: v4()}).save();
       expect(await mod._nextCount()).to.eq(6);
     });
