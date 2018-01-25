@@ -2,7 +2,7 @@
 
 ## 1.1.1 | 2018-01-25 | [Diff](https://github.com/Alorel/mongoose-auto-increment-reworked/compare/1.1.0...1.1.1)
 
-- :heavy_check_mark: **Cbore**: Add diffs to changelog
+- :heavy_check_mark: **Chore**: Add diffs to changelog
 
 ## 1.1.0 | 2018-01-25 | [Diff](https://github.com/Alorel/mongoose-auto-increment-reworked/compare/1.0.0...1.1.0)
 
