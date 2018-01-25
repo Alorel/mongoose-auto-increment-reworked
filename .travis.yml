@@ -65,8 +65,14 @@ jobs:
 
     - stage: *releaseStage
       node_js: *latest_tested
+      install: true
       script: node ./build/version-is-tampered-with.js --echo --exit
-      before_script: npm run build -- --sourceMap false
+      before_deploy:
+        - node ./build/set-badges-branch.js
+        - npm install
+        - npm run build -- --sourceMap false
+        - npm install -g doctoc@^1.3.0
+        - doctoc --github README.md
       deploy:
         - provider: npm
           on:
