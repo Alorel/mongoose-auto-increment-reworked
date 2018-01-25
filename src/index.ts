@@ -162,6 +162,7 @@ export class MongooseAutoIncrementID {
     this._options = options;
   }
 
+  /** Error, if any, thrown by applyPlugin() */
   public get error(): Error | undefined {
     return this.state.error;
   }
@@ -171,6 +172,7 @@ export class MongooseAutoIncrementID {
     return !!this.state.ready;
   }
 
+  /** Promise returned by applyPlugin() */
   public get promise(): Promise<void> {
     return this.state.promise;
   }
@@ -221,6 +223,7 @@ export class MongooseAutoIncrementID {
     return Object.freeze(value);
   }
 
+  /** The plugin instante's ready state */
   @LazyGetter()
   private get state(): ReadyState {
     let states: ReadyStates = <ReadyStates>readyMap.get(this.schema);
@@ -241,6 +244,35 @@ export class MongooseAutoIncrementID {
   }
 
   /**
+   * Get the initialisation error for the given schema and model
+   * @param schema The schema
+   * @param modelName The mode
+   * @returns The initialisation error that occurred or undefined if the schema/model combination hasn't been plugged
+   *   into yet or hasn't errored.
+   */
+  public static getErrorFor(schema: Schema, modelName: string): Error | undefined {
+    const state: ReadyState | undefined = MongooseAutoIncrementID.getStateFor(schema, modelName);
+
+    if (state) {
+      return state.error;
+    }
+  }
+
+  /**
+   * Get the initialisation promise for the given schema and model
+   * @param schema The schema
+   * @param modelName The mode
+   * @returns The initialisation promise or undefined if the schema/model combination hasn't been plugged into yet.
+   */
+  public static getPromiseFor(schema: Schema, modelName: string): Promise<void> | undefined {
+    const state: ReadyState | undefined = MongooseAutoIncrementID.getStateFor(schema, modelName);
+
+    if (state) {
+      return state.promise;
+    }
+  }
+
+  /**
    * Perform initialisation of the plugin's model. You only need to call this once per application.
    * @param modelName Name of the plugin model
    * @throws {Error} If this gets called more than once
@@ -257,6 +289,37 @@ export class MongooseAutoIncrementID {
 
     log('Creating model instance');
     MongooseAutoIncrementID.idCounter = model<IdCounterDocument>(modelName, idCounterSchema);
+  }
+
+  /**
+   * Check if the given schema and model have finished their plugin initialisation
+   * @param schema The schema
+   * @param modelName The mode
+   * @returns true if the initialisation completed successfully, false if it hasn't completed yet, it errored or hasn't
+   *   started yet.
+   */
+  public static isReady(schema: Schema, modelName: string): boolean {
+    const state: ReadyState | undefined = MongooseAutoIncrementID.getStateFor(schema, modelName);
+
+    if (state) {
+      return !!<any>state.ready;
+    }
+
+    return false;
+  }
+
+  /**
+   * Internal static state getter
+   * @param schema Schema we're getting the state for
+   * @param modelName Model we're getting the state for
+   * @returns The ready state or undefined if the state cannot be found
+   */
+  private static getStateFor(schema: Schema, modelName: string): ReadyState | undefined {
+    const states: ReadyStates | undefined = readyMap.get(schema);
+
+    if (states) {
+      return states[modelName];
+    }
   }
 
   /**

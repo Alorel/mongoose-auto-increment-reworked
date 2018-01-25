@@ -69,10 +69,163 @@ describe('Core', () => {
     return mongoose.connect('mongodb://127.0.0.1/auto-id-tests', connectionOptions);
   });
 
+  if (!process.env.CI) { // don't need to on CI
+    before('clean DB', done => {
+      mongoose.connection.dropDatabase()
+        .then(() => done())
+        .catch(() => done());
+    });
+
+    after('clean DB', done => {
+      mongoose.connection.dropDatabase()
+        .then(() => done())
+        .catch(() => done());
+    });
+  }
+
   before('Initialise', () => initialise());
 
   before('Remove id counters', () => cleanIdCount());
   after('Clean ID count', () => cleanIdCount());
+
+  describe('static error', () => {
+    let sch: mongoose.Schema;
+
+    beforeEach(() => {
+      sch = new Schema({foo: {type: String}});
+    });
+
+    it('Should return undefined if schema hasn\'t been used yet', () => {
+      expect(MongooseAutoIncrementID.getErrorFor(sch, v4()))
+        .to.be.undefined;
+    });
+
+    it('Should return undefined if the model hasn\'t been used yet', async() => {
+      await new MongooseAutoIncrementID(sch, v4()).applyPlugin();
+
+      expect(MongooseAutoIncrementID.getErrorFor(sch, v4()))
+        .to.be.undefined;
+    });
+
+    it('Should return undefined if no errors occur', async() => {
+      const name: string = v4();
+      await new MongooseAutoIncrementID(sch, name).applyPlugin();
+
+      expect(MongooseAutoIncrementID.getErrorFor(sch, name))
+        .to.be.undefined;
+    });
+
+    describe('Should be the same as', () => {
+      let p: MongooseAutoIncrementID;
+      let name: string;
+      let sch$: mongoose.Schema;
+      let e: Error;
+      let thrown: Error;
+
+      before(done => {
+        name = v4();
+        sch$ = sch;
+        p = new MongooseAutoIncrementID(sch, name);
+        e = new Error('forced');
+        (<any>p).init = () => Promise.reject(e);
+
+        p.applyPlugin()
+          .then(() => done('Did not throw'))
+          .catch((err: Error) => {
+            thrown = err;
+            done();
+          })
+          .catch(done);
+      });
+
+      it('error in rejected applyPlugin promise', () => {
+        expect(MongooseAutoIncrementID.getErrorFor(sch$, name) === thrown)
+          .to.be.true;
+      });
+
+      it('active error getter', () => {
+        expect(MongooseAutoIncrementID.getErrorFor(sch$, name) === p.error)
+          .to.be.true;
+      });
+    });
+  });
+
+  describe('static promise', () => {
+    let sch: mongoose.Schema;
+
+    beforeEach(() => {
+      sch = new Schema({foo: {type: String}});
+    });
+
+    it('Should return undefined if schema hasn\'t been used yet', () => {
+      expect(MongooseAutoIncrementID.getPromiseFor(sch, v4()))
+        .to.be.undefined;
+    });
+
+    it('Should return undefined if the model hasn\'t been used yet', async() => {
+      await new MongooseAutoIncrementID(sch, v4()).applyPlugin();
+
+      expect(MongooseAutoIncrementID.getPromiseFor(sch, v4()))
+        .to.be.undefined;
+    });
+
+    describe('Should return the same promise as', () => {
+      let p: MongooseAutoIncrementID;
+      let p$: Promise<void>;
+      let p$static: Promise<void>;
+
+      before(() => {
+        const name: string = v4();
+
+        p = new MongooseAutoIncrementID(sch, name);
+        p$ = p.applyPlugin();
+        p$static = <Promise<void>>MongooseAutoIncrementID.getPromiseFor(sch, name);
+      });
+
+      it('promise returned by applyPlugin', () => {
+        expect(p$static === p$).to.be.true;
+      });
+
+      it('active promise getter', () => {
+        expect(p$static === p.promise).to.be.true;
+      });
+    });
+  });
+
+  describe('static isReady', () => {
+    let sch: mongoose.Schema;
+
+    beforeEach(() => {
+      sch = new Schema({foo: {type: String}});
+    });
+
+    it('Should return false if schema hasn\'t been used yet', () => {
+      expect(MongooseAutoIncrementID.isReady(sch, v4()))
+        .to.be.false;
+    });
+
+    it('Should return false if the model hasn\'t been used yet', async() => {
+      await new MongooseAutoIncrementID(sch, v4()).applyPlugin();
+
+      expect(MongooseAutoIncrementID.isReady(sch, v4()))
+        .to.be.false;
+    });
+
+    it('Should return true if the model initialised', async() => {
+      const name: string = v4();
+      const pl = new MongooseAutoIncrementID(sch, name);
+
+      const pr$ = pl.applyPlugin();
+
+      expect(MongooseAutoIncrementID.isReady(sch, name))
+        .to.be.false;
+
+      await pr$;
+
+      expect(MongooseAutoIncrementID.isReady(sch, name))
+        .to.be.true;
+    });
+  });
 
   describe('Constructor', () => {
     it('Should throw if schema is missing', () => {
