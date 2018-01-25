@@ -6,9 +6,24 @@
 ![Supports Node >= 6](https://img.shields.io/badge/Node-%3E=6-brightgreen.svg)
 
 A rewrite of [mongoose-auto-increment](https://www.npmjs.com/package/mongoose-auto-increment) with optimisations and
-tests updated for the latest versions of Mongoose 4 and 5.
+tests updated for the latest versions of Mongoose 4 and 5, as well as new features.
 
 -----
+
+# Table of Contents
+
+<!-- START doctoc generated TOC please keep comment here to allow auto update -->
+<!-- DON'T EDIT THIS SECTION, INSTEAD RE-RUN doctoc TO UPDATE -->
+
+
+- [Basic usage](#basic-usage)
+- [Getting the next ID](#getting-the-next-id)
+- [Resetting the ID to its starting value](#resetting-the-id-to-its-starting-value)
+- [Configuration](#configuration)
+  - [Default configuration](#default-configuration)
+- [Getting initialisation information](#getting-initialisation-information)
+
+<!-- END doctoc generated TOC please keep comment here to allow auto update -->
 
 # Basic usage
 
@@ -116,4 +131,40 @@ const options = {
 };
 
 new MongooseAutoIncrementID(MySchema, 'MyModel', options);
+```
+
+## Default configuration
+
+You can get the current default configuration as follows:
+
+```javascript
+MongooseAutoIncrementID.getDefaults();
+```
+
+And set it as follows:
+
+```javascript
+MongooseAutoIncrementID.setDefaults(myNewDefaults);
+```
+
+# Getting initialisation information
+
+You can get the current initialisation state of the plugin via instance methods:
+
+```javascript
+const mySchema = new mongoose.Schema({/*...*/});
+const plugin = new MongooseAutoIncrementID(mySchema, 'MyModel');
+const promise = plugin.applyPlugin();
+
+console.log(plugin.promise === promise); // true
+console.log(`Plugin ready: ${plugin.isReady}`);
+console.log('Initialisation error: ', plugin.error);
+```
+
+Or via static methods:
+
+```javascript
+MongooseAutoIncrementID.getPromiseFor(mySchema, 'MyModel');
+MongooseAutoIncrementID.isReady(mySchema, 'MyModel');
+MongooseAutoIncrementID.getErrorFor(mySchema, 'MyModel');
 ```

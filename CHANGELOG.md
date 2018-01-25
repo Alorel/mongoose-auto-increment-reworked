@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.1.0
+## 1.1.0 (2018-01-25)
 
 - :star: **Feature**: `MongooseAutoIncrementID` instances now have the following readonly properties:
   - `isReady` - Whether or not the initialisation has completed 
