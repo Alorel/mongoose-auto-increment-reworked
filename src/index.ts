@@ -20,6 +20,16 @@ export interface IdCounterModel {
   m: string;
 }
 
+/** Default options */
+let defaultOptions: PluginOptions = {
+  field: '_id',
+  incrementBy: 1,
+  nextCount: '_nextCount',
+  resetCount: '_resetCount',
+  startAt: 1,
+  unique: true
+};
+
 /**
  * Document interface
  * @internal
@@ -203,14 +213,7 @@ export class MongooseAutoIncrementID {
   /** User-supplied options merged with defaults */
   @LazyGetter()
   private get options(): Readonly<PluginOptions> {
-    const value: PluginOptions = {
-      field: '_id',
-      incrementBy: 1,
-      nextCount: '_nextCount',
-      resetCount: '_resetCount',
-      startAt: 1,
-      unique: true
-    };
+    const value: PluginOptions = MongooseAutoIncrementID.getDefaults();
 
     Object.assign(value, this._options);
 
@@ -241,6 +244,11 @@ export class MongooseAutoIncrementID {
     }
 
     return state;
+  }
+
+  /** The default options used by the plugin */
+  public static getDefaults(): PluginOptions {
+    return Object.assign({}, defaultOptions);
   }
 
   /**
@@ -306,6 +314,17 @@ export class MongooseAutoIncrementID {
     }
 
     return false;
+  }
+
+  /**
+   * Set default options used by the plugin
+   * @param newOpts The options
+   * @throws If any parameter is invalid
+   */
+  public static setDefaults(newOpts: Partial<PluginOptions> = {}): void {
+    const out: PluginOptions = Object.assign(MongooseAutoIncrementID.getDefaults(), newOpts);
+    MongooseAutoIncrementID.validateOptions(out);
+    defaultOptions = out;
   }
 
   /**

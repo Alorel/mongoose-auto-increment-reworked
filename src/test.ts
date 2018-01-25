@@ -7,7 +7,13 @@ import * as mongoose from 'mongoose';
 import {Document, Model} from 'mongoose';
 import * as util from 'util';
 import {v4} from 'uuid';
-import {IdCounterDocument, MongooseAutoIncrementID, NextCountFunction, ResetCountFunction} from './index';
+import {
+  IdCounterDocument,
+  MongooseAutoIncrementID,
+  NextCountFunction,
+  PluginOptions,
+  ResetCountFunction
+} from './index';
 
 function inspect(value: any, opts: util.InspectOptions = {}): string {
   return util.inspect(value, Object.assign({colors: true}, opts));
@@ -87,6 +93,70 @@ describe('Core', () => {
 
   before('Remove id counters', () => cleanIdCount());
   after('Clean ID count', () => cleanIdCount());
+
+  describe('default options', () => {
+    let original: PluginOptions;
+
+    before(() => {
+      original = MongooseAutoIncrementID.getDefaults();
+    });
+
+    after('reset original', () => {
+      MongooseAutoIncrementID.setDefaults(original);
+    });
+
+    it('defaults', () => {
+      expect(original).to.deep.eq({
+        field: '_id',
+        incrementBy: 1,
+        nextCount: '_nextCount',
+        resetCount: '_resetCount',
+        startAt: 1,
+        unique: true
+      });
+    });
+
+    it('Should return a clone', () => {
+      const a = MongooseAutoIncrementID.getDefaults();
+      const b = MongooseAutoIncrementID.getDefaults();
+
+      expect(a === b).to.be.false;
+      expect(a).to.deep.eq(b);
+    });
+
+    it('Should persist', () => {
+      const field: string = v4();
+      MongooseAutoIncrementID.setDefaults({field});
+
+      expect(MongooseAutoIncrementID.getDefaults().field).to.eq(field);
+    });
+
+    it('should throw if setting an invalid field', () => {
+      const field: string = MongooseAutoIncrementID.getDefaults().field;
+
+      expect(() => {
+        MongooseAutoIncrementID.setDefaults({field: <any>5});
+      })
+        .to.throw(TypeError, 'field must be a string');
+
+      expect(MongooseAutoIncrementID.getDefaults().field).to.eq(field);
+    });
+
+    it('Should get applied to the instance', () => {
+      MongooseAutoIncrementID.setDefaults({nextCount: false});
+      const sch = new Schema({foo: {type: String}});
+      const p = new MongooseAutoIncrementID(sch, v4());
+
+      expect(p['options'].nextCount).to.be.false;
+    });
+
+    it('Should accept a call with no args', () => {
+      const p = MongooseAutoIncrementID.getDefaults();
+      MongooseAutoIncrementID.setDefaults();
+
+      expect(MongooseAutoIncrementID.getDefaults()).to.deep.eq(p);
+    });
+  });
 
   describe('static error', () => {
     let sch: mongoose.Schema;
