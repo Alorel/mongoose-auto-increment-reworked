@@ -11,8 +11,6 @@ stages:
 env:
   global:
     - TS_NODE_TYPE_CHECK=1
-    - TS_NODE_CACHE_DIRECTORY=./node_modules/.cache/ts-node
-    - TS_NODE_PROJECT=./tsconfig.test.json
 
 cached_stage: &cachedStage
   cache: &cache
