@@ -41,11 +41,10 @@ const MySchema = new mongoose.Schema({
 });
 
 /*
- * Perform plugin initialisation. This MUST be done once and only once - it initialises the Mongoose model used by the
- * plugin. You can pass a string parameter to the initialiser to give the model a custom name; otherwise, it will default
- * to IdCounter.
+ * An optional step - set the name of the schema used by the plugin (defaults to 'IdCounter'). Has no effect if
+ * the plugin has already been applied to a schema.
  */
-MongooseAutoIncrementID.initialise();
+MongooseAutoIncrementID.initialise('MyCustomName');
 
 const plugin = new MongooseAutoIncrementID(MySchema, 'MyModel');
 
@@ -57,6 +56,12 @@ plugin.applyPlugin()
   .catch(e => {
     // Plugin failed to initialise
   });
+
+/*
+ * Alternatively, just use schema.plugin(). The options passed MUST contain the "modelName" key and, optionally,
+ * any of the parameters from the configuration section below.
+ */
+MySchema.plugin(MongooseAutoIncrementID.plugin, {modelName: 'MyModel'});
 
 // Only turn the schema into the model AFTER applyPlugin has been called. You do not need to wait for the promise to resolve.
 const MyModel = mongoose.model('MyModel', MySchema);
@@ -81,7 +86,7 @@ MyModel._resetCount()
 The plugin's configuration accepts the following options:
 
 ```typescript
-/** Plogin configuration */
+/** Plugin configuration */
 export interface PluginOptions {
   /**
    * The field that will be automatically incremented. Do not define this in your schema.

@@ -40,38 +40,6 @@ export interface IdCounterDocument extends IdCounterModel, Document {
 /** Debug logger */
 const log = debug('mongoose-auto-increment-reworked');
 
-log('Creating schema');
-
-/** Schema definition */
-const idCounterSchema = new Schema(
-  {
-    c: {
-      default: 0,
-      required: true,
-      type: Number
-    },
-    f: {
-      required: true,
-      type: String
-    },
-    m: {
-      required: true,
-      type: String
-    },
-  },
-  {
-    autoIndex: true, // the collection will always be tiny; no problem if we autoIndex in production
-    id: false,
-    skipVersioning: true,
-    timestamps: false,
-    versionKey: false,
-  }
-);
-
-log('Defining index');
-
-idCounterSchema.index({f: 1, m: 1}, {unique: true});
-
 /** Function for getting the next counter value */
 export type NextCountFunction = () => Promise<number>;
 
@@ -114,8 +82,13 @@ export interface PluginOptions {
   unique: boolean;
 }
 
+/** Plugin options when applying via schema.plugin() */
+export interface SchemaPluginOptions extends Partial<PluginOptions> {
+  modelName: string;
+}
+
 /**
- * A plugin instante's ready state
+ * A plugin instance's ready state
  * @internal
  */
 export interface ReadyState {
@@ -137,8 +110,8 @@ const readyMap = new WeakMap<Schema, ReadyStates>();
 
 /** Mongoose plugin for automatically generating auto-incrementing IDs */
 export class MongooseAutoIncrementID {
-  /** The model instance */
-  private static idCounter: Model<IdCounterDocument>;
+  /** Name of the model used by the plugin */
+  private static modelName = 'IdCounter';
   /** User-provided options */
   private readonly _options: Partial<PluginOptions>;
   /** Name of the model we're working with */
@@ -170,6 +143,44 @@ export class MongooseAutoIncrementID {
     this.model = modelName;
     this.schema = schema;
     this._options = options;
+  }
+
+  /** The model instance */
+  @LazyGetter()
+  private static get idCounter(): Model<IdCounterDocument> {
+    log('Creating schema');
+    /** Schema definition */
+    const idCounterSchema = new Schema(
+      {
+        c: {
+          default: 0,
+          required: true,
+          type: Number
+        },
+        f: {
+          required: true,
+          type: String
+        },
+        m: {
+          required: true,
+          type: String
+        },
+      },
+      {
+        autoIndex: true, // the collection will always be tiny; no problem if we autoIndex in production
+        id: false,
+        skipVersioning: true,
+        timestamps: false,
+        versionKey: false,
+      }
+    );
+
+    log('Defining index');
+    idCounterSchema.index({f: 1, m: 1}, {unique: true});
+
+    log('Creating model instance');
+
+    return model<IdCounterDocument>(MongooseAutoIncrementID.modelName, idCounterSchema);
   }
 
   /** Error, if any, thrown by applyPlugin() */
@@ -238,6 +249,7 @@ export class MongooseAutoIncrementID {
 
     let state: ReadyState = states[this.model];
 
+    // istanbul ignore else
     if (!state) {
       state = <any>{};
       states[this.model] = state;
@@ -281,22 +293,22 @@ export class MongooseAutoIncrementID {
   }
 
   /**
-   * Perform initialisation of the plugin's model. You only need to call this once per application.
+   * Set the model name this plugin will use. Has no effect if you have already applied the plugin to a schema.
    * @param modelName Name of the plugin model
-   * @throws {Error} If this gets called more than once
-   * @throws {TypeError} If model name is empty or not a string. Won't happen if you omit the parameter.
+   * @throws {TypeError} If model name is not a string. Won't happen if you omit the parameter.
    */
-  public static initialise(modelName = 'IdCounter'): void {
+  public static initialise(modelName?: string): void {
     log('Performing static initialisation with name %s', modelName);
-    if (MongooseAutoIncrementID.idCounter) {
-      throw new Error('Already initialised');
-    }
-    if (!modelName || typeof modelName !== 'string') {
-      throw new TypeError('Model name is required');
+    if (modelName !== undefined) {
+      if (typeof modelName !== 'string') {
+        throw new TypeError('Model name must be a string');
+      }
+
+      MongooseAutoIncrementID.modelName = modelName;
     }
 
-    log('Creating model instance');
-    MongooseAutoIncrementID.idCounter = model<IdCounterDocument>(modelName, idCounterSchema);
+    // Perform no-op initialisation
+    ((m: Model<IdCounterDocument>) => m)(MongooseAutoIncrementID.idCounter);
   }
 
   /**
@@ -314,6 +326,26 @@ export class MongooseAutoIncrementID {
     }
 
     return false;
+  }
+
+  /**
+   * Handler for applying the plugin via schema.plugin()
+   * @param schema The schema we're applying the plugin to
+   * @param options Plugin options. This should be a {@link SchemaPluginOptions} object containing a modelName key and,
+   * optionally, any of the other plugin options.
+   */
+  public static plugin(schema: Schema, options?: any): Promise<void> {
+    if (!options) {
+      throw new Error('Options are required');
+    }
+
+    const modelName: string = (<SchemaPluginOptions>options).modelName;
+
+    if (!modelName) {
+      throw new Error('Options must contain a "modelName" key');
+    }
+
+    return new MongooseAutoIncrementID(schema, modelName, options).applyPlugin();
   }
 
   /**
@@ -386,13 +418,6 @@ export class MongooseAutoIncrementID {
    */
   public applyPlugin(): Promise<void> {
     log('Running plugin initialisation on %s', this.model);
-
-    if (!MongooseAutoIncrementID.idCounter) {
-      this.state.error = new Error('The initialise method has not been called');
-      this.state.promise = Promise.reject(this.state.error);
-
-      return this.state.promise;
-    }
 
     try {
       this.validateOptions();

@@ -11,3 +11,5 @@
 /*.tgz
 /build/
 /tsconfig.json
+/.env
+/mocha.opts
