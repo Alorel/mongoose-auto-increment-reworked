@@ -5,4 +5,5 @@
 --full-trace
 -r ts-node/register
 -r source-map-support/register
+--retries 3
 src/test.ts
