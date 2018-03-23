@@ -32,7 +32,7 @@ jobs:
   include:
     - stage: *lintStage
       <<: *cachedStage
-      node_js: &latest_tested 9
+      node_js: stable
       env:
         - LINT=1
       before_install:
@@ -41,34 +41,34 @@ jobs:
       before_script: mv package.json.bak package.json -f
       script: npm run tslint
     - <<: *testStageBase
-      node_js: 9
+      node_js: stable
       env:
         - MONGOOSE=5
     - <<: *testStageBase
-      node_js: 9
+      node_js: stable
       env:
         - MONGOOSE=4
 
     - <<: *testStageBase
-      node_js: 8
+      node_js: lts/carbon
       env:
         - MONGOOSE=5
     - <<: *testStageBase
-      node_js: 8
+      node_js: lts/carbon
       env:
         - MONGOOSE=4
 
     - <<: *testStageBase
-      node_js: 6
+      node_js: lts/boron
       env:
         - MONGOOSE=5
     - <<: *testStageBase
-      node_js: 6
+      node_js: lts/boron
       env:
         - MONGOOSE=4
 
     - stage: *releaseStage
-      node_js: *latest_tested
+      node_js: stable
       install: true
       script: node ./build/version-is-tampered-with.js --echo --exit
       before_deploy:
