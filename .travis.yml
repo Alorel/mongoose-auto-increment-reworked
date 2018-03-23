@@ -2,78 +2,56 @@ group: travis_latest
 sudo: false
 language: node_js
 
-stages:
-  - &lintStage Lint
-  - &testStage Test
-  - name: &releaseStage Release
-    if: tag IS present
+node_js:
+  - stable
+  - lts/carbon
+  - lts/boron
 
 env:
   global:
     - TS_NODE_TYPE_CHECK=1
+  matrix:
+    - MONGOOSE=5
+    - MONGOOSE=4
 
-cached_stage: &cachedStage
-  cache: &cache
-    directories:
-      - node_modules
-  before_cache: rm -rf ./node_modules/.cache
+services:
+  - mongodb
 
-test_stage_base: &testStageBase
-  <<: *cachedStage
-  stage: *testStage
-  services:
-    - mongodb
-  before_install: node ./build/set-mongoose-version.js
-  script: npm test
-  before_script: npm run typecheck
-  after_success: cat ./coverage/lcov.info | coveralls
+cache:
+  directories:
+    - node_modules
+before_cache: rm -rf node_modules/.bin/.cache
+
+before_install:
+  - node ./build/set-mongoose-version.js
+  - npm install -g greenkeeper-lockfile
+  - greenkeeper-lockfile-update
+before_script: npm run typecheck
+script:
+  - npm run tslint
+  - npm test
+after_success: cat ./coverage/lcov.info | coveralls
+after_script: if [[ $GH_TOKEN ]]; then greenkeeper-lockfile-upload; fi;
+
+stages:
+  - Test
+  - name: Release
+    if: tag IS present
 
 jobs:
   include:
-    - stage: *lintStage
-      <<: *cachedStage
-      node_js: stable
-      env:
-        - LINT=1
-      before_install:
-        - cp package.json package.json.bak
-        - node ./build/filter-lint-depedencies.js
-      before_script: mv package.json.bak package.json -f
-      script: npm run tslint
-    - <<: *testStageBase
-      node_js: stable
+    - stage: Release
+      node_js: lts/*
       env:
         - MONGOOSE=5
-    - <<: *testStageBase
-      node_js: stable
-      env:
-        - MONGOOSE=4
-
-    - <<: *testStageBase
-      node_js: lts/carbon
-      env:
-        - MONGOOSE=5
-    - <<: *testStageBase
-      node_js: lts/carbon
-      env:
-        - MONGOOSE=4
-
-    - <<: *testStageBase
-      node_js: lts/boron
-      env:
-        - MONGOOSE=5
-    - <<: *testStageBase
-      node_js: lts/boron
-      env:
-        - MONGOOSE=4
-
-    - stage: *releaseStage
-      node_js: stable
-      install: true
+      services: []
+      before_install: true
+      before_script: false
       script: node ./build/version-is-tampered-with.js --echo --exit
+      after_success: true
+      after_script: true
       before_deploy:
         - node ./build/set-badges-branch.js
-        - npm install
         - npm run build -- --sourceMap false
         - npm run doctoc
       deploy:

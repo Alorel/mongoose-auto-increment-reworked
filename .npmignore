@@ -13,3 +13,4 @@
 /tsconfig.json
 /.env
 /mocha.opts
+/.npmrc

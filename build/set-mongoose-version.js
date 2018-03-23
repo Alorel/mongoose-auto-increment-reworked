@@ -12,10 +12,12 @@ if (process.env.MONGOOSE) {
     case 4:
       pkg.peerDependencies.mongoose = '^4.0.0';
       pkg.devDependencies.mongoose = '^4.0.0';
+      pkg.dependencies['@types/mongoose'] = '^4.0.0';
       break;
     case 5:
       pkg.peerDependencies.mongoose = '^5.0.0';
       pkg.devDependencies.mongoose = '^5.0.0';
+      pkg.dependencies['@types/mongoose'] = '^5.0.0';
       break;
     default:
       console.log('Skipping: MONGOOSE env variable invalid: ' + process.env.MONGOOSE);
