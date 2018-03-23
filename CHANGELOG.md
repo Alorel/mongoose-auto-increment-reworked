@@ -13,7 +13,7 @@
 
 ## 1.2.1 | 2018-03-23
 
-[Diff](https://github.com/Alorel/mongoose-auto-increment-reworked/compare/1.2.1...1.2.0)
+[Diff](https://github.com/Alorel/mongoose-auto-increment-reworked/compare/v1.2.1...1.2.0)
 
 - **[tests]** Fixed typings for mocha
 - **[tests]** Simplified .travis.yml
