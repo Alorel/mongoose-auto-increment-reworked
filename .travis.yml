@@ -23,9 +23,9 @@ cache:
 before_cache: rm -rf node_modules/.bin/.cache
 
 before_install:
-  - node ./build/set-mongoose-version.js
   - npm install -g greenkeeper-lockfile
   - greenkeeper-lockfile-update
+  - node ./build/set-mongoose-version.js
 before_script: npm run typecheck
 script:
   - npm run tslint
