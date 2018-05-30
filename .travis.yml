@@ -26,6 +26,7 @@ before_install:
   - npm install -g greenkeeper-lockfile
   - greenkeeper-lockfile-update
   - node ./build/set-mongoose-version.js
+install: npm install
 before_script: npm run typecheck
 script:
   - npm run tslint
