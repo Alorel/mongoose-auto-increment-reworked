@@ -106,7 +106,6 @@
       "allow-fast-null-checks",
       "allow-new"
     ],
-    "no-unused-variable": true,
     "no-var-keyword": true,
     "no-void-expression": [
       true,
