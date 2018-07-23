@@ -54,6 +54,8 @@ describe('Core', () => {
 
     if ((mongoose.version || '').charAt(0) === '4') {
       connectionOptions.useMongoClient = true;
+    } else {
+      connectionOptions.useNewUrlParser = true;
     }
 
     const host = process.env.MONGODB_HOST || '127.0.0.1';
