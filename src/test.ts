@@ -59,8 +59,9 @@ describe('Core', () => {
     }
 
     const host = process.env.MONGODB_HOST || '127.0.0.1';
+    const port = process.env.MONGODB_PORT || '27017';
 
-    return <any>mongoose.connect(`mongodb://${host}/${v4()}`, connectionOptions);
+    return <any>mongoose.connect(`mongodb://${host}:${port}/${v4()}`, connectionOptions);
   });
 
   before('Initialise', () => {
