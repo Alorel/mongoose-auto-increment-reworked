@@ -68,7 +68,7 @@ describe('Core', () => {
     MongooseAutoIncrementID.initialise(v4());
   });
 
-  if (process.env.CI) { // don't need to on CI
+  if (!process.env.CI) {
     before('clean DB', done => {
       mongoose.connection.dropDatabase()
         .then(() => done())
