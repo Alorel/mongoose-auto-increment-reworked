@@ -8,8 +8,6 @@ node_js:
   - lts/boron
 
 env:
-  global:
-    - TS_NODE_TYPE_CHECK=1
   matrix:
     - MONGOOSE=5
     - MONGOOSE=4
@@ -23,14 +21,14 @@ cache:
 before_cache: rm -rf node_modules/.bin/.cache
 
 before_install:
-  - npm install -g greenkeeper-lockfile
+  - npm install -g greenkeeper-lockfile yarn
   - greenkeeper-lockfile-update
   - node ./build/set-mongoose-version.js
-install: npm install
-before_script: npm run typecheck
+install: yarn install --check-files
+before_script: yarn run typecheck
 script:
-  - npm run tslint
-  - npm test
+  - yarn run tslint
+  - yarn test
 after_success: cat ./coverage/lcov.info | coveralls
 after_script: if [[ $GH_TOKEN ]]; then greenkeeper-lockfile-upload; fi;
 
@@ -42,7 +40,7 @@ stages:
 jobs:
   include:
     - stage: Release
-      node_js: lts/*
+      node_js: stable
       env:
         - MONGOOSE=5
       services: []
@@ -53,8 +51,8 @@ jobs:
       after_script: true
       before_deploy:
         - node ./build/set-badges-branch.js
-        - npm run build -- --sourceMap false
-        - npm run doctoc
+        - yarn run build --sourceMap false
+        - yarn run doctoc
       deploy:
         - provider: npm
           on:

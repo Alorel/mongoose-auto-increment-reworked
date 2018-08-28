@@ -1,4 +1,4 @@
-// tslint:disable:no-unused-expression no-empty no-invalid-this no-duplicate-imports
+// tslint:disable:no-unused-expression no-empty no-invalid-this no-duplicate-imports no-magic-numbers
 
 import {expect} from 'chai';
 import isEqual = require('lodash/isEqual');
