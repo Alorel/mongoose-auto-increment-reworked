@@ -16,6 +16,7 @@ services:
   - mongodb
 
 cache:
+  yarn: true
   directories:
     - node_modules
 before_cache: rm -rf node_modules/.bin/.cache
