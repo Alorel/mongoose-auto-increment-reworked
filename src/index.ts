@@ -492,7 +492,7 @@ export class MongooseAutoIncrementID {
     const self = this;
 
     log('Adding pre-save hook');
-    this.schema.pre('save', function(this: Document, next: any): void {
+    this.schema.pre('save', function (this: Document, next: any): void {
       debug('Doc save hook triggered');
 
       // Only work with new documents

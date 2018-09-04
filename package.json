@@ -29,7 +29,7 @@
     "mongoose": "^4.0.0 || ^5.0.0"
   },
   "devDependencies": {
-    "@alorel-personal/tslint-rules": "^1.2.2",
+    "@alorel-personal/tslint-rules": "^2.0.0",
     "@types/chai": "^4.1.1",
     "@types/debug": "^0.0.30",
     "@types/lodash": "^4.14.93",

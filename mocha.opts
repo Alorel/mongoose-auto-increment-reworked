@@ -1,4 +1,3 @@
---throw-deprecation
 -t 10000
 --exit
 --check-leaks
