@@ -2,9 +2,9 @@
 # yarn lockfile v1
 
 
-"@alorel-personal/tslint-rules@^2.0.0":
-  version "2.0.0"
-  resolved "https://registry.yarnpkg.com/@alorel-personal/tslint-rules/-/tslint-rules-2.0.0.tgz#d34e291e05e1bba7fdae3d6744f1c3b9808eb859"
+"@alorel-personal/tslint-rules@^3.0.0":
+  version "3.0.0"
+  resolved "https://registry.yarnpkg.com/@alorel-personal/tslint-rules/-/tslint-rules-3.0.0.tgz#c3497377477af6ff920d5d6b3bcb60489b712cfa"
 
 "@babel/code-frame@7.0.0-beta.51":
   version "7.0.0-beta.51"
