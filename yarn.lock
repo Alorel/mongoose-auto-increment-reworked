@@ -973,9 +973,9 @@ jsprim@^1.2.2:
     json-schema "0.2.3"
     verror "1.10.0"
 
-kareem@2.2.1:
-  version "2.2.1"
-  resolved "https://registry.yarnpkg.com/kareem/-/kareem-2.2.1.tgz#9950809415aa3cde62ab43b4f7b919d99816e015"
+kareem@2.3.0:
+  version "2.3.0"
+  resolved "https://registry.yarnpkg.com/kareem/-/kareem-2.3.0.tgz#ef33c42e9024dce511eeaf440cd684f3af1fc769"
 
 lcid@^1.0.0:
   version "1.0.0"
@@ -1148,9 +1148,9 @@ mocha@^5.0.0:
     mkdirp "0.5.1"
     supports-color "5.4.0"
 
-mongodb-core@3.1.3:
-  version "3.1.3"
-  resolved "https://registry.yarnpkg.com/mongodb-core/-/mongodb-core-3.1.3.tgz#b036bce5290b383fe507238965bef748dd8adb75"
+mongodb-core@3.1.5:
+  version "3.1.5"
+  resolved "https://registry.yarnpkg.com/mongodb-core/-/mongodb-core-3.1.5.tgz#59ca67d7f6cea570d5437624a7afec8d752d477a"
   dependencies:
     bson "^1.1.0"
     require_optional "^1.0.1"
@@ -1158,27 +1158,27 @@ mongodb-core@3.1.3:
   optionalDependencies:
     saslprep "^1.0.0"
 
-mongodb@3.1.4:
-  version "3.1.4"
-  resolved "https://registry.yarnpkg.com/mongodb/-/mongodb-3.1.4.tgz#0ff07a7409a4edf05e71f9ff8df3633bd278ed53"
+mongodb@3.1.6:
+  version "3.1.6"
+  resolved "https://registry.yarnpkg.com/mongodb/-/mongodb-3.1.6.tgz#6054641973b5bf5b5ae1c67dcbcf8fa88280273d"
   dependencies:
-    mongodb-core "3.1.3"
+    mongodb-core "3.1.5"
     safe-buffer "^5.1.2"
 
 mongoose-legacy-pluralize@1.0.2:
   version "1.0.2"
   resolved "https://registry.yarnpkg.com/mongoose-legacy-pluralize/-/mongoose-legacy-pluralize-1.0.2.tgz#3ba9f91fa507b5186d399fb40854bff18fb563e4"
 
-"mongoose@^4.0.0 || ^5.0.0":
-  version "5.2.13"
-  resolved "https://registry.yarnpkg.com/mongoose/-/mongoose-5.2.13.tgz#d2e2bd7fccb665640372431e8c8f943be9f5ec15"
+mongoose@^5.3.1:
+  version "5.3.1"
+  resolved "https://registry.yarnpkg.com/mongoose/-/mongoose-5.3.1.tgz#52d5bfb67788a2194e5f7a2a5c0d597e4b86fd7a"
   dependencies:
     async "2.6.1"
     bson "~1.0.5"
-    kareem "2.2.1"
+    kareem "2.3.0"
     lodash.get "4.4.2"
-    mongodb "3.1.4"
-    mongodb-core "3.1.3"
+    mongodb "3.1.6"
+    mongodb-core "3.1.5"
     mongoose-legacy-pluralize "1.0.2"
     mpath "0.5.1"
     mquery "3.2.0"
