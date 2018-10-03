@@ -120,11 +120,10 @@
     "@types/events" "*"
     "@types/node" "*"
 
-"@types/mongoose@^4.0.0 || ^5.0.0":
-  version "5.2.9"
-  resolved "https://registry.yarnpkg.com/@types/mongoose/-/mongoose-5.2.9.tgz#28357437bf8873e93de2f0c8b5cf67b82d8f7181"
+"@types/mongoose@^5.2.18":
+  version "5.2.18"
+  resolved "https://registry.yarnpkg.com/@types/mongoose/-/mongoose-5.2.18.tgz#caa5c813865e1975114407bfd8131f055bcd8b36"
   dependencies:
-    "@types/events" "*"
     "@types/mongodb" "*"
     "@types/node" "*"
 
